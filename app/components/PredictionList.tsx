@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "@/app/lib/auth";
-import { getMyPredictions } from "@/app/lib/predictions";
+import {
+  getMyPredictions,
+  deletePrediction,
+} from "@/app/lib/predictions";
 import PredictionCard from "./PredictionCard";
 
 export default function PredictionList() {
@@ -16,7 +19,7 @@ export default function PredictionList() {
 
       const data = await getMyPredictions(user.code);
 
-      data.sort((a, b) => a.round - b.round);
+      data.sort((a, b) => a.game.id - b.game.id);
 
       setPredictions(data);
     }
@@ -24,26 +27,37 @@ export default function PredictionList() {
     loadPredictions();
   }, []);
 
+  async function handleDelete(id: string) {
+    const confirmDelete = window.confirm(
+      "Queres apagar este palpite?"
+    );
+
+    if (!confirmDelete) return;
+
+    await deletePrediction(id);
+
+    setPredictions((prev) =>
+      prev.filter((prediction) => prediction.id !== id)
+    );
+  }
+
   if (predictions.length === 0) {
     return (
-      <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-800 p-5 text-center text-zinc-400">
+      <p className="text-center text-zinc-400">
         Ainda não fizeste nenhum palpite.
-      </div>
+      </p>
     );
   }
 
   return (
-    <div className="mt-5 space-y-4">
-
     <div className="space-y-4">
       {predictions.map((prediction) => (
         <PredictionCard
           key={prediction.id}
           prediction={prediction}
+          onDelete={handleDelete}
         />
       ))}
     </div>
-
-  </div>
-);
+  );
 }
