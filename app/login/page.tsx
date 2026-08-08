@@ -2,36 +2,34 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { users } from "@/app/lib/users";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export default function LoginPage() {
   const [code, setCode] = useState("");
   const router = useRouter();
+  const { login } = useAuth();
 
-  function login() {
-    console.log("Botão clicado");
-    console.log("Código:", code);
-
+  function handleLogin() {
     const user = users.find(
       (u) => u.code.toUpperCase() === code.trim().toUpperCase()
     );
-
-    console.log("Utilizador encontrado:", user);
 
     if (!user) {
       alert("Código inválido!");
       return;
     }
 
-    localStorage.setItem("user", JSON.stringify(user));
+    login(user);
 
     alert(`Bem-vindo ${user.name}`);
 
-    router.push("/");
+    router.replace("/");
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-900">
+    <main className="flex min-h-screen items-center justify-center bg-zinc-900 px-4">
       <div className="w-full max-w-sm rounded-2xl bg-zinc-800 p-8">
 
         <h1 className="text-center text-3xl font-black text-white">
@@ -52,7 +50,7 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={login}
+          onClick={handleLogin}
           className="mt-6 w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white transition hover:bg-green-500"
         >
           Entrar
