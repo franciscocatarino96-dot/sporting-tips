@@ -52,11 +52,12 @@ export default function PredictionCard({
       </div>
 
       <div className="mt-5 flex items-center justify-between border-t border-zinc-700 pt-3">
-        {prediction.points > 0 ? (
+        {prediction.result ? (
           <p className="font-bold text-green-500">
             🟢 +{prediction.points} pontos
           </p>
         ) : (
+            
           <p className="text-sm text-zinc-400">
             🟡 À espera do resultado
           </p>

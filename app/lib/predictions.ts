@@ -15,6 +15,7 @@ import { db } from "./firebase";
 import { Prediction } from "./types";
 import { games } from "./games";
 import { isPredictionOpen } from "./gameStatus";
+import { getResult } from "./results";
 
 export async function savePrediction(
   userCode: string,
@@ -76,21 +77,26 @@ export async function getMyPredictions(
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => {
-    const prediction = {
-      id: doc.id,
-      ...(doc.data() as Omit<Prediction, "id">),
-    };
+  return Promise.all(
+    snapshot.docs.map(async (doc) => {
+      const prediction = {
+        id: doc.id,
+        ...(doc.data() as Omit<Prediction, "id">),
+      };
 
-    const game = games.find(
-      (g) => g.id === prediction.gameId
-    );
+      const game = games.find(
+        (g) => g.id === prediction.gameId
+      );
 
-    return {
-      ...prediction,
-      game,
-    };
-  });
+      const result = await getResult(prediction.gameId);
+
+      return {
+        ...prediction,
+        game,
+        result,
+      };
+    })
+  );
 }
 
 export async function getPredictionsByGame(
