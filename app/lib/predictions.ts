@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -150,4 +151,12 @@ export async function resetPredictionPoints(
   });
 
   await batch.commit();
+}
+
+export async function deletePrediction(
+  predictionId: string
+) {
+  await deleteDoc(
+    doc(db, "predictions", predictionId)
+  );
 }

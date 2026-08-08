@@ -7,4 +7,6 @@ export type Prediction = {
   homeGoals: number;
   awayGoals: number;
   points: number;
+
+  game: any;
 };
