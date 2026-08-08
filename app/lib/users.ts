@@ -1,6 +1,6 @@
 export const users = [
   {
-    code: "FC01",
+    code: "FC18",
     name: "Francisco Catarino",
     admin: true,
   },

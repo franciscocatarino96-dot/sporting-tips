@@ -177,7 +177,7 @@ export const games = [
     homeTeam: "Sporting CP",
     awayTeam: "Est. Amadora",
     homeLogo: "/logos/sporting.png",
-    awayLogo: "/logos/estrela.png",
+    awayLogo: "/logos/estrela-amadora.png",
   },
   {
     id: 19,
@@ -186,7 +186,7 @@ export const games = [
     time: "20:30",
     homeTeam: "Vitória SC",
     awayTeam: "Sporting CP",
-    homeLogo: "/logos/vitoria.png",
+    homeLogo: "/logos/vitoria-sc.png",
     awayLogo: "/logos/sporting.png",
   },
   {
@@ -207,7 +207,7 @@ export const games = [
     homeTeam: "Sporting CP",
     awayTeam: "Rio Ave",
     homeLogo: "/logos/sporting.png",
-    awayLogo: "/logos/rioave.png",
+    awayLogo: "/logos/rio-ave.png",
   },
   {
     id: 22,
@@ -267,7 +267,7 @@ export const games = [
     homeTeam: "Sporting CP",
     awayTeam: "Casa Pia AC",
     homeLogo: "/logos/sporting.png",
-    awayLogo: "/logos/casapia.png",
+    awayLogo: "/logos/casa-pia.png",
   },
   {
     id: 28,
@@ -307,7 +307,7 @@ export const games = [
     homeTeam: "Sporting CP",
     awayTeam: "Gil Vicente",
     homeLogo: "/logos/sporting.png",
-    awayLogo: "/logos/gilvicente.png",
+    awayLogo: "/logos/gil-vicente.png",
   },
   {
     id: 32,
@@ -337,6 +337,6 @@ export const games = [
     homeTeam: "Sporting CP",
     awayTeam: "Santa Clara",
     homeLogo: "/logos/sporting.png",
-    awayLogo: "/logos/santaclara.png",
+    awayLogo: "/logos/santa-clara.png",
   },
 ];
