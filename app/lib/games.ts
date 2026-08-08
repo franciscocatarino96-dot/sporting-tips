@@ -3,7 +3,7 @@ export const games = [
     id: 1,
     round: "J1",
     date: "2026-08-08",
-    time: "20:30",
+    time: "21:30",
     homeTeam: "Est. Amadora",
     awayTeam: "Sporting CP",
     homeLogo: "/logos/estrela-amadora.png",
