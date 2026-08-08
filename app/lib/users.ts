@@ -20,7 +20,7 @@ export const users = [
     admin: false,
   },
   {
-    code: "RP05",
+    code: "RMP05",
     name: "Ricardo Proença",
     admin: false,
   },
