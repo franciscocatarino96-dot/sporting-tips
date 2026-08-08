@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
 import { AuthProvider } from "./providers/AuthProvider";
 
 const geistSans = Geist({
@@ -29,7 +28,7 @@ export default function RootLayout({
       lang="pt"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="h-full bg-zinc-950 text-white">
         <AuthProvider>
           {children}
         </AuthProvider>
