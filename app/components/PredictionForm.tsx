@@ -16,9 +16,11 @@ export default function PredictionForm({
 }: PredictionFormProps) {
   const { user, loading } = useAuth();
 
-  const [homeGoals, setHomeGoals] = useState(0);
-  const [awayGoals, setAwayGoals] = useState(0);
+  const [homeGoals, setHomeGoals] = useState("");
+  const [awayGoals, setAwayGoals] = useState("");
   const [saved, setSaved] = useState(false);
+
+  const [hasPrediction, setHasPrediction] = useState(false);
 
   useEffect(() => {
     async function loadPrediction() {
@@ -29,10 +31,16 @@ export default function PredictionForm({
         gameId
       );
 
-      if (!prediction) return;
+      if (!prediction) {
+        setHasPrediction(false);
+        setHomeGoals("");
+        setAwayGoals("");
+        return;
+      }
 
-      setHomeGoals(prediction.homeGoals);
-      setAwayGoals(prediction.awayGoals);
+      setHomeGoals(String(prediction.homeGoals));
+      setAwayGoals(String(prediction.awayGoals));
+      setHasPrediction(true);
     }
 
     loadPrediction();
@@ -44,16 +52,34 @@ export default function PredictionForm({
       return;
     }
 
+    if (homeGoals === "" || awayGoals === "") {
+      alert("Preenche os dois resultados.");
+      return;
+    }
+
+    const home = Number(homeGoals);
+    const away = Number(awayGoals);
+
+    if (hasPrediction) {
+      const confirmChange = window.confirm(
+        `Vais alterar o teu palpite.\n\n` +
+        `Novo palpite: ${home} - ${away}\n\n` +
+        `Tens a certeza?`
+      );
+
+      if (!confirmChange) return;
+    }
+
     try {
       await savePrediction(
         user.code,
         user.name,
         gameId,
-        1,
-        homeGoals,
-        awayGoals
+        home,
+        away
       );
 
+      setHasPrediction(true);
       setSaved(true);
 
       setTimeout(() => {
@@ -61,6 +87,10 @@ export default function PredictionForm({
       }, 2000);
     } catch (error) {
       console.error(error);
+
+      if (error instanceof Error) {
+        alert(error.message);
+      }
     }
   }
 
@@ -69,30 +99,43 @@ export default function PredictionForm({
   }
 
   return (
-    <div className="mt-8">
+    <div className="mt-6">
+
       <div className="grid grid-cols-2 gap-4">
+
         <input
           type="number"
+          inputMode="numeric"
           min="0"
+          placeholder="Casa"
           value={homeGoals}
-          onChange={(e) => setHomeGoals(Number(e.target.value))}
+          onChange={(e) =>
+            setHomeGoals(e.target.value)
+          }
           className="rounded-xl bg-zinc-900 p-4 text-center text-4xl font-black outline-none focus:ring-2 focus:ring-green-500"
         />
 
         <input
           type="number"
+          inputMode="numeric"
           min="0"
+          placeholder="Fora"
           value={awayGoals}
-          onChange={(e) => setAwayGoals(Number(e.target.value))}
+          onChange={(e) =>
+            setAwayGoals(e.target.value)
+          }
           className="rounded-xl bg-zinc-900 p-4 text-center text-4xl font-black outline-none focus:ring-2 focus:ring-green-500"
         />
+
       </div>
 
       <button
         onClick={handleSavePrediction}
         className="mt-8 w-full rounded-xl bg-green-600 py-4 text-xl font-bold transition hover:bg-green-500"
       >
-        Guardar Palpite
+        {hasPrediction
+          ? "✏️ Alterar Palpite"
+          : "Guardar Palpite"}
       </button>
 
       {saved && (
@@ -100,6 +143,7 @@ export default function PredictionForm({
           ✅ Palpite guardado!
         </p>
       )}
+
     </div>
   );
 }

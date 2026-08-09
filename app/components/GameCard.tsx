@@ -6,6 +6,11 @@ import Link from "next/link";
 
 import { getResult } from "../lib/results";
 import { isPredictionOpen } from "../lib/gameStatus";
+import {
+  getPrediction,
+  arePredictionsClosed,
+} from "../lib/predictions";
+import { getCurrentUser } from "../lib/auth";
 
 type GameCardProps = {
   id: number;
@@ -81,26 +86,46 @@ export default function GameCard({
     awayGoals: number;
   } | null>(null);
 
-  useEffect(() => {
-    async function loadResult() {
-      const data = await getResult(id);
+  const [hasPrediction, setHasPrediction] = useState(false);
+  const [predictionsClosed, setPredictionsClosed] =
+    useState(false);
 
-      if (data) {
+  useEffect(() => {
+    async function loadGameData() {
+      const resultData = await getResult(id);
+
+      if (resultData) {
         setResult({
-          homeGoals: data.homeGoals,
-          awayGoals: data.awayGoals,
+          homeGoals: resultData.homeGoals,
+          awayGoals: resultData.awayGoals,
         });
       }
+
+      const user = getCurrentUser();
+
+      if (user) {
+        const prediction = await getPrediction(
+          user.code,
+          id
+        );
+
+        setHasPrediction(!!prediction);
+      }
+
+      const closed = await arePredictionsClosed(id);
+
+      setPredictionsClosed(closed);
     }
 
-    loadResult();
+    loadGameData();
   }, [id]);
 
-  const predictionOpen = isPredictionOpen(date, time);
+  const predictionOpen =
+    isPredictionOpen(date, time) &&
+    !predictionsClosed;
 
   return (
-    <div className="mt-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-800 transition-all duration-300 hover:border-green-700">
-
+    <div>
       <div className="flex items-center justify-between border-b border-zinc-700 px-4 py-2 text-[11px] text-zinc-500">
         <p className="font-semibold">{round}</p>
 
@@ -161,26 +186,22 @@ export default function GameCard({
 
           {result ? (
 
-            <button className="mt-4 w-full rounded-lg bg-[#0B5E3C] py-2 text-sm font-semibold text-white transition hover:bg-[#0F7148]">
-
-              ✅ Ver Resultado
-
+            <button className="mt-4 w-full rounded-lg bg-gradient-to-r from-zinc-600 via-zinc-500 to-zinc-600 py-2 text-sm font-semibold text-white shadow-inner transition hover:from-zinc-500 hover:via-zinc-400 hover:to-zinc-500">
+              ✅ Ver Pontuações
             </button>
 
           ) : predictionOpen ? (
 
             <button className="mt-4 w-full rounded-lg bg-[#0B5E3C] py-2 text-sm font-semibold text-white transition hover:bg-[#0F7148]">
-
-              Dar Palpite
-
+              {hasPrediction
+                ? "✏️ Editar Palpite"
+                : "📝 Dar Palpite"}
             </button>
 
           ) : (
 
             <button className="mt-4 w-full rounded-lg bg-zinc-900 py-2 text-sm font-semibold text-red-400 transition hover:bg-zinc-700">
-
               🔒 Ver Palpites
-
             </button>
 
           )}

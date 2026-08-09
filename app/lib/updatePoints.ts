@@ -3,6 +3,7 @@ import { getResult } from "./results";
 import {
   getPredictionsByGame,
   updatePredictionPoints,
+  savePredictionHistory,
 } from "./predictions";
 
 import { calculatePoints } from "./calculatePoints";
@@ -25,7 +26,18 @@ export async function updatePoints(gameId: number) {
 
   const predictions = await getPredictionsByGame(gameId);
 
+  console.log("JOGO:", gameId);
+console.log("PALPITES ENCONTRADOS:", predictions);
+
   for (const prediction of predictions) {
+    console.log(
+    "GUARDAR HISTÓRICO:",
+    prediction.userCode,
+    prediction.gameId,
+    prediction.homeGoals,
+    prediction.awayGoals
+    );
+    
     const points = calculatePoints(
       {
         homeGoals: prediction.homeGoals,
@@ -41,6 +53,11 @@ export async function updatePoints(gameId: number) {
     await updatePredictionPoints(
       prediction.id,
       points
+    );
+
+    await savePredictionHistory(
+       prediction,
+       points
     );
   }
 }

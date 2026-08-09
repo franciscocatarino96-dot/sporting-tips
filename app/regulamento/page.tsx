@@ -22,7 +22,7 @@ export default function RegulamentoPage() {
 
           <Section title="🏆 Objetivo">
             <p>
-              O <strong>Sporting Tips</strong> é um concurso privado de palpites
+              A <strong>Liga Palpites</strong> é um concurso privado de palpites
               dedicado aos jogos do Sporting Clube de Portugal na Liga Portugal
               Betclic 2026/27.
             </p>
@@ -187,7 +187,7 @@ export default function RegulamentoPage() {
           <div className="mt-8 rounded-xl border border-zinc-600 bg-zinc-600 p-4 text-center">
 
             <p className="text-xs font-bold text-WHITE">
-              v1.0 by Francisco Catarino
+              Liga Palpites
             </p>
 
             <p className="mt-1 text-sm text-zinc-400">
@@ -195,7 +195,7 @@ export default function RegulamentoPage() {
             </p>
 
             <p className="mt-3 text-xs text-zinc-500">
-              Version 1.0
+              Version 1.1
             </p>
 
             <p className="text-xs text-zinc-500">

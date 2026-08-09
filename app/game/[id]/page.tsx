@@ -1,6 +1,7 @@
 import { games } from "@/app/lib/games";
 import { getResult } from "@/app/lib/results";
 import { isPredictionOpen } from "@/app/lib/gameStatus";
+import { arePredictionsClosed } from "@/app/lib/predictions";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -17,28 +18,34 @@ type Props = {
 export default async function GamePage({ params }: Props) {
   const { id } = await params;
 
-  const game = games.find((g) => g.id === Number(id));
+  const game = games.find(
+    (g) => g.id === Number(id)
+  );
 
   if (!game) {
     return (
-      <main className="min-h-screen bg-zinc-900 text-white flex items-center justify-center">
-        <h1 className="text-2xl font-bold">
-          Jogo não encontrado.
-        </h1>
+      <main className="min-h-screen bg-zinc-950 text-white">
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <p>Jogo não encontrado.</p>
+        </div>
       </main>
     );
   }
 
   const result = await getResult(game.id);
 
-  const predictionOpen = isPredictionOpen(
-    game.date,
-    game.time
+  const closed = await arePredictionsClosed(
+    game.id
   );
 
+  const predictionOpen =
+    isPredictionOpen(game.date, game.time) &&
+    !closed;
+
   return (
-    <main className="min-h-screen bg-zinc-900 text-white">
-      <div className="mx-auto max-w-xl px-4 py-6">
+    <main className="min-h-screen bg-zinc-950 text-white">
+
+      <div className="mx-auto max-w-5xl px-4 py-6">
 
         <h1 className="mb-5 text-center text-2xl font-black">
           Dar Palpite
@@ -119,9 +126,13 @@ export default async function GamePage({ params }: Props) {
                 showPoints
               />
             </>
+
           ) : predictionOpen ? (
+
             <PredictionForm gameId={game.id} />
+
           ) : (
+
             <>
               <div className="mt-5 rounded-xl bg-zinc-900 px-4 py-3 text-center">
 
@@ -139,6 +150,7 @@ export default async function GamePage({ params }: Props) {
                 gameId={game.id}
               />
             </>
+
           )}
 
         </div>
@@ -151,6 +163,7 @@ export default async function GamePage({ params }: Props) {
         </Link>
 
       </div>
+
     </main>
   );
 }
