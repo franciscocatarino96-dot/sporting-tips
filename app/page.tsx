@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar";
 import GameList from "./components/GameList";
 import { useAuth } from "./providers/AuthProvider";
 
+
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();

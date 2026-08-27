@@ -1,57 +1,57 @@
 export const users = [
   {
     code: "FC18",
-    name: "Francisco Catarino",
+    name: "Catarino",
     admin: true,
   },
   {
     code: "PS02",
-    name: "Pedro Soares",
+    name: "Pedro",
     admin: false,
   },
   {
     code: "GB03",
-    name: "Guillaume Borges",
+    name: "Gui",
     admin: false,
   },
   {
     code: "RP04",
-    name: "Renato Pereira",
+    name: "Renato",
     admin: false,
   },
   {
     code: "RMP05",
-    name: "Ricardo Proença",
+    name: "Ricardo",
     admin: false,
   },
   {
     code: "AP06",
-    name: "André Proença",
+    name: "André",
     admin: false,
   },
   {
     code: "CP07",
-    name: "Carlos Proença",
+    name: "Carlos",
     admin: false,
   },
   {
     code: "AS08",
-    name: "Alexandre Soares",
+    name: "Xelinha",
     admin: false,
   },
   {
     code: "AC09",
-    name: "Antonio Caires",
+    name: "Caires",
     admin: false,
   },
   {
     code: "JS10",
-    name: "Joao Santos",
+    name: "Lelo",
     admin: false,
   },
   {
     code: "CC11",
-    name: "Carlos Coutinho",
+    name: "Coutinho",
     admin: false,
   },
 ];

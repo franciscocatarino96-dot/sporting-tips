@@ -2,6 +2,7 @@ import { games } from "@/app/lib/games";
 import { getResult } from "@/app/lib/results";
 import { isPredictionOpen } from "@/app/lib/gameStatus";
 import { arePredictionsClosed } from "@/app/lib/predictions";
+import { getGameSchedule } from "@/app/lib/gameSchedule";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -15,7 +16,9 @@ type Props = {
   }>;
 };
 
-export default async function GamePage({ params }: Props) {
+export default async function GamePage({
+  params,
+}: Props) {
   const { id } = await params;
 
   const game = games.find(
@@ -32,15 +35,44 @@ export default async function GamePage({ params }: Props) {
     );
   }
 
+  // =====================================================
+  // HORÁRIO PERSONALIZADO
+  // =====================================================
+
+  const customSchedule =
+    await getGameSchedule(game.id);
+
+  const gameDate =
+    customSchedule?.date ?? game.date;
+
+  const gameTime =
+    customSchedule?.time ?? game.time;
+
+  // =====================================================
+  // RESULTADO
+  // =====================================================
+
   const result = await getResult(game.id);
+
+  // =====================================================
+  // PALPITES FECHADOS MANUALMENTE
+  // =====================================================
 
   const closed = await arePredictionsClosed(
     game.id
   );
 
+  // =====================================================
+  // PALPITES ABERTOS?
+  //
+  // gameStatus usa sempre a hora de Lisboa.
+  // =====================================================
+
   const predictionOpen =
-    isPredictionOpen(game.date, game.time) &&
-    !closed;
+    isPredictionOpen(
+      gameDate,
+      gameTime
+    ) && !closed;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -54,10 +86,12 @@ export default async function GamePage({ params }: Props) {
         <div className="rounded-2xl bg-zinc-800 p-4">
 
           <p className="mb-4 text-center text-xs text-zinc-400">
-            {game.round} • {game.date} • {game.time}
+            {game.round} • {gameDate} • {gameTime}
           </p>
 
           <div className="grid grid-cols-3 items-center">
+
+            {/* CASA */}
 
             <div className="flex flex-col items-center">
 
@@ -74,12 +108,15 @@ export default async function GamePage({ params }: Props) {
 
             </div>
 
+            {/* RESULTADO */}
+
             <div className="text-center">
 
               {result ? (
                 <>
                   <p className="text-3xl font-black">
-                    {result.homeGoals} - {result.awayGoals}
+                    {result.homeGoals} -{" "}
+                    {result.awayGoals}
                   </p>
 
                   <p className="mt-1 text-xs font-semibold text-green-500">
@@ -93,6 +130,8 @@ export default async function GamePage({ params }: Props) {
               )}
 
             </div>
+
+            {/* FORA */}
 
             <div className="flex flex-col items-center">
 
@@ -111,7 +150,12 @@ export default async function GamePage({ params }: Props) {
 
           </div>
 
+          {/* =====================================================
+              JOGO COM RESULTADO
+          ===================================================== */}
+
           {result ? (
+
             <>
               <div className="mt-5 rounded-xl bg-zinc-900 px-4 py-3 text-center">
 
@@ -129,9 +173,19 @@ export default async function GamePage({ params }: Props) {
 
           ) : predictionOpen ? (
 
-            <PredictionForm gameId={game.id} />
+            /* =====================================================
+               PALPITES AINDA ABERTOS
+            ===================================================== */
+
+            <PredictionForm
+              gameId={game.id}
+            />
 
           ) : (
+
+            /* =====================================================
+               PALPITES ENCERRADOS
+            ===================================================== */
 
             <>
               <div className="mt-5 rounded-xl bg-zinc-900 px-4 py-3 text-center">

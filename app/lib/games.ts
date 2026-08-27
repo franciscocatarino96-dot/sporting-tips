@@ -32,8 +32,8 @@ export const games = [
   {
     id: 4,
     round: "J4",
-    date: "2026-08-30",
-    time: "20:30",
+    date: "2026-08-28",
+    time: "20:15",
     homeTeam: "Rio Ave",
     awayTeam: "Sporting CP",
     homeLogo: "/logos/rio-ave.png",

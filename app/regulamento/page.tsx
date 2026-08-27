@@ -195,7 +195,7 @@ export default function RegulamentoPage() {
             </p>
 
             <p className="mt-3 text-xs text-zinc-500">
-              Version 1.1
+              Version 1.1.1
             </p>
 
             <p className="text-xs text-zinc-500">

@@ -4,11 +4,18 @@ import { useEffect, useState } from "react";
 
 import { Prediction } from "@/app/lib/types";
 import { getPredictionsByGame } from "@/app/lib/predictions";
+import { users } from "@/app/lib/users";
 
 type PredictionsListProps = {
   gameId: number;
   showPoints?: boolean;
 };
+
+function getFirstName(code: string) {
+  const user = users.find((user) => user.code === code);
+
+  return user ? user.name.split(" ")[0] : code;
+}
 
 export default function PredictionsList({
   gameId,
@@ -56,8 +63,8 @@ export default function PredictionsList({
 
             {/* Utilizador */}
 
-            <p className="w-10 text-sm font-bold text-white">
-              {prediction.userCode.slice(0, 2)}
+            <p className="w-24 text-sm font-bold text-white">
+              {getFirstName(prediction.userCode)}
             </p>
 
             {/* Palpite */}
