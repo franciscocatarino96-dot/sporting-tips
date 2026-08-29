@@ -6,7 +6,9 @@ import Header from "../components/Header";
 import Navbar from "../components/Navbar";
 
 import { useAuth } from "../providers/AuthProvider";
+
 import { games } from "../lib/games";
+import { championsGames } from "../lib/championsGames";
 
 import {
   saveResult,
@@ -28,6 +30,8 @@ import {
   saveGameSchedule,
 } from "../lib/gameSchedule";
 
+import type { Competition } from "../lib/types";
+
 type Result = {
   homeGoals: number;
   awayGoals: number;
@@ -36,16 +40,39 @@ type Result = {
 export default function AdminPage() {
   const { user, loading } = useAuth();
 
-  const [selectedGame, setSelectedGame] = useState(1);
+  // =====================================================
+  // COMPETIÇÃO
+  // =====================================================
 
-  const [homeGoals, setHomeGoals] = useState(0);
-  const [awayGoals, setAwayGoals] = useState(0);
+  const [competition, setCompetition] =
+    useState<Competition>("liga");
 
-  const [saved, setSaved] = useState(false);
+  // =====================================================
+  // JOGO SELECIONADO
+  // =====================================================
 
-  const [results, setResults] = useState<
-    Record<number, Result>
-  >({});
+  const [selectedGame, setSelectedGame] =
+    useState(1);
+
+  // =====================================================
+  // RESULTADO
+  // =====================================================
+
+  const [homeGoals, setHomeGoals] =
+    useState(0);
+
+  const [awayGoals, setAwayGoals] =
+    useState(0);
+
+  const [saved, setSaved] =
+    useState(false);
+
+  const [results, setResults] =
+    useState<Record<number, Result>>({});
+
+  // =====================================================
+  // EDIÇÃO
+  // =====================================================
 
   const [editingGame, setEditingGame] =
     useState<number | null>(null);
@@ -56,10 +83,15 @@ export default function AdminPage() {
   const [editingAwayGoals, setEditingAwayGoals] =
     useState(0);
 
+  // =====================================================
+  // LOADING
+  // =====================================================
+
   const [loadingResults, setLoadingResults] =
     useState(true);
 
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] =
+    useState(false);
 
   // =====================================================
   // DATA / HORA
@@ -78,36 +110,72 @@ export default function AdminPage() {
     useState(false);
 
   // =====================================================
+  // JOGOS DA COMPETIÇÃO
+  // =====================================================
+
+  const competitionGames =
+    competition === "liga"
+      ? games
+      : championsGames;
+
+  // =====================================================
   // CARREGAR RESULTADOS
   // =====================================================
 
   useEffect(() => {
     async function loadResults() {
+      setLoadingResults(true);
+
       try {
-        const loadedResults: Record<number, Result> = {};
+        const loadedResults:
+          Record<number, Result> = {};
 
         await Promise.all(
-          games.map(async (game) => {
-            const result = await getResult(game.id);
+          competitionGames.map(
+            async (game) => {
+              const result =
+                await getResult(
+                  game.id,
+                  competition
+                );
 
-            if (result) {
-              loadedResults[game.id] = {
-                homeGoals: result.homeGoals,
-                awayGoals: result.awayGoals,
-              };
+              if (result) {
+                loadedResults[game.id] = {
+                  homeGoals:
+                    result.homeGoals,
+                  awayGoals:
+                    result.awayGoals,
+                };
+              }
             }
-          })
+          )
         );
 
-        setResults(loadedResults);
-
-        const firstPendingGame = games.find(
-          (game) => !loadedResults[game.id]
+        setResults(
+          loadedResults
         );
+
+        const firstPendingGame =
+          competitionGames.find(
+            (game) =>
+              !loadedResults[
+                game.id
+              ]
+          );
 
         if (firstPendingGame) {
-          setSelectedGame(firstPendingGame.id);
+          setSelectedGame(
+            firstPendingGame.id
+          );
+        } else if (
+          competitionGames.length > 0
+        ) {
+          setSelectedGame(
+            competitionGames[0].id
+          );
         }
+
+        setEditingGame(null);
       } catch (error) {
         console.error(
           "Erro ao carregar resultados:",
@@ -119,17 +187,19 @@ export default function AdminPage() {
     }
 
     loadResults();
-  }, []);
+  }, [competition]);
 
   // =====================================================
-  // CARREGAR DATA / HORA DO JOGO SELECIONADO
+  // CARREGAR DATA / HORA
   // =====================================================
 
   useEffect(() => {
     async function loadSchedule() {
-      const game = games.find(
-        (g) => g.id === selectedGame
-      );
+      const game =
+        competitionGames.find(
+          (g) =>
+            g.id === selectedGame
+        );
 
       if (!game) {
         return;
@@ -138,15 +208,18 @@ export default function AdminPage() {
       try {
         const customSchedule =
           await getGameSchedule(
-            selectedGame
+            selectedGame,
+            competition
           );
 
         setScheduleDate(
-          customSchedule?.date ?? game.date
+          customSchedule?.date ??
+            game.date
         );
 
         setScheduleTime(
-          customSchedule?.time ?? game.time
+          customSchedule?.time ??
+            game.time
         );
       } catch (error) {
         console.error(
@@ -154,42 +227,79 @@ export default function AdminPage() {
           error
         );
 
-        setScheduleDate(game.date);
-        setScheduleTime(game.time);
+        setScheduleDate(
+          game.date
+        );
+
+        setScheduleTime(
+          game.time
+        );
       }
     }
 
     loadSchedule();
-  }, [selectedGame]);
+  }, [
+    selectedGame,
+    competition,
+  ]);
 
   // =====================================================
   // JOGOS PENDENTES
   // =====================================================
 
-  const pendingGames = games.filter(
-    (game) => !results[game.id]
-  );
+  const pendingGames =
+    competitionGames.filter(
+      (game) =>
+        !results[game.id]
+    );
 
   // =====================================================
   // JOGOS COMPLETOS
   // =====================================================
 
-  const completedGames = games.filter(
-    (game) => results[game.id]
-  );
+  const completedGames =
+    competitionGames.filter(
+      (game) =>
+        results[game.id]
+    );
+
+  // =====================================================
+  // ALTERAR COMPETIÇÃO
+  // =====================================================
+
+  function handleCompetitionChange(
+    newCompetition: Competition
+  ) {
+    setCompetition(
+      newCompetition
+    );
+
+    setSelectedGame(1);
+
+    setHomeGoals(0);
+    setAwayGoals(0);
+
+    setSaved(false);
+    setEditingGame(null);
+
+    setScheduleOpen(false);
+    setScheduleDate("");
+    setScheduleTime("");
+  }
 
   // =====================================================
   // SELECIONAR JOGO
   // =====================================================
 
-  function handleSelectGame(gameId: number) {
+  function handleSelectGame(
+    gameId: number
+  ) {
     setSelectedGame(gameId);
 
     setHomeGoals(0);
     setAwayGoals(0);
 
     setSaved(false);
-
     setScheduleOpen(false);
   }
 
@@ -208,7 +318,10 @@ export default function AdminPage() {
   // =====================================================
 
   async function handleSaveSchedule() {
-    if (!scheduleDate || !scheduleTime) {
+    if (
+      !scheduleDate ||
+      !scheduleTime
+    ) {
       alert(
         "⚠️ Escolhe uma data e uma hora."
       );
@@ -222,7 +335,8 @@ export default function AdminPage() {
       await saveGameSchedule(
         selectedGame,
         scheduleDate,
-        scheduleTime
+        scheduleTime,
+        competition
       );
 
       setScheduleOpen(false);
@@ -236,11 +350,17 @@ export default function AdminPage() {
         error
       );
 
-      if (error instanceof Error) {
-        alert(error.message);
+      if (
+        error instanceof Error
+      ) {
+        alert(
+          error.message
+        );
       }
     } finally {
-      setSavingSchedule(false);
+      setSavingSchedule(
+        false
+      );
     }
   }
 
@@ -256,12 +376,14 @@ export default function AdminPage() {
     setSaving(true);
 
     try {
-      const savedGameId = selectedGame;
+      const savedGameId =
+        selectedGame;
 
-      const savedResult: Result = {
-        homeGoals,
-        awayGoals,
-      };
+      const savedResult: Result =
+        {
+          homeGoals,
+          awayGoals,
+        };
 
       // -------------------------------------------------
       // 1. GUARDAR RESULTADO
@@ -270,17 +392,21 @@ export default function AdminPage() {
       await saveResult(
         savedGameId,
         homeGoals,
-        awayGoals
+        awayGoals,
+        competition
       );
 
       // -------------------------------------------------
       // 2. ATUALIZAR INTERFACE
       // -------------------------------------------------
 
-      setResults((previous) => ({
-        ...previous,
-        [savedGameId]: savedResult,
-      }));
+      setResults(
+        (previous) => ({
+          ...previous,
+          [savedGameId]:
+            savedResult,
+        })
+      );
 
       setSaved(true);
 
@@ -288,14 +414,19 @@ export default function AdminPage() {
       // 3. ENCONTRAR PRÓXIMO JOGO
       // -------------------------------------------------
 
-      const nextGame = games.find(
-        (game) =>
-          game.id !== savedGameId &&
-          !results[game.id]
-      );
+      const nextGame =
+        competitionGames.find(
+          (game) =>
+            game.id !==
+              savedGameId &&
+            !results[game.id]
+        );
 
       if (nextGame) {
-        setSelectedGame(nextGame.id);
+        setSelectedGame(
+          nextGame.id
+        );
+
         setHomeGoals(0);
         setAwayGoals(0);
       }
@@ -305,8 +436,13 @@ export default function AdminPage() {
       // -------------------------------------------------
 
       try {
-        await updatePoints(savedGameId);
-      } catch (pointsError) {
+        await updatePoints(
+          savedGameId,
+          competition
+        );
+      } catch (
+        pointsError
+      ) {
         console.error(
           "Erro ao atualizar pontos:",
           pointsError
@@ -327,7 +463,9 @@ export default function AdminPage() {
         error
       );
 
-      if (error instanceof Error) {
+      if (
+        error instanceof Error
+      ) {
         alert(
           `❌ Não foi possível guardar o resultado.\n\n${error.message}`
         );
@@ -347,7 +485,10 @@ export default function AdminPage() {
 
   async function handleClosePredictions() {
     try {
-      await closePredictions(selectedGame);
+      await closePredictions(
+        selectedGame,
+        competition
+      );
 
       alert(
         "🔒 Palpites fechados com sucesso!"
@@ -355,8 +496,12 @@ export default function AdminPage() {
     } catch (error) {
       console.error(error);
 
-      if (error instanceof Error) {
-        alert(error.message);
+      if (
+        error instanceof Error
+      ) {
+        alert(
+          error.message
+        );
       }
     }
   }
@@ -367,7 +512,10 @@ export default function AdminPage() {
 
   async function handleOpenPredictions() {
     try {
-      await openPredictions(selectedGame);
+      await openPredictions(
+        selectedGame,
+        competition
+      );
 
       alert(
         "🔓 Palpites abertos com sucesso!"
@@ -375,8 +523,12 @@ export default function AdminPage() {
     } catch (error) {
       console.error(error);
 
-      if (error instanceof Error) {
-        alert(error.message);
+      if (
+        error instanceof Error
+      ) {
+        alert(
+          error.message
+        );
       }
     }
   }
@@ -385,14 +537,19 @@ export default function AdminPage() {
   // EDITAR JOGO COMPLETO
   // =====================================================
 
-  function handleEditGame(gameId: number) {
-    const result = results[gameId];
+  function handleEditGame(
+    gameId: number
+  ) {
+    const result =
+      results[gameId];
 
     if (!result) {
       return;
     }
 
-    setEditingGame(gameId);
+    setEditingGame(
+      gameId
+    );
 
     setEditingHomeGoals(
       result.homeGoals
@@ -408,32 +565,47 @@ export default function AdminPage() {
   // =====================================================
 
   async function handleSaveEdit() {
-    if (editingGame === null) {
+    if (
+      editingGame === null
+    ) {
       return;
     }
 
-    const gameId = editingGame;
+    const gameId =
+      editingGame;
 
     try {
       await saveResult(
         gameId,
         editingHomeGoals,
-        editingAwayGoals
+        editingAwayGoals,
+        competition
       );
 
-      setResults((previous) => ({
-        ...previous,
-        [gameId]: {
-          homeGoals: editingHomeGoals,
-          awayGoals: editingAwayGoals,
-        },
-      }));
+      setResults(
+        (previous) => ({
+          ...previous,
+          [gameId]: {
+            homeGoals:
+              editingHomeGoals,
+            awayGoals:
+              editingAwayGoals,
+          },
+        })
+      );
 
-      setEditingGame(null);
+      setEditingGame(
+        null
+      );
 
       try {
-        await updatePoints(gameId);
-      } catch (pointsError) {
+        await updatePoints(
+          gameId,
+          competition
+        );
+      } catch (
+        pointsError
+      ) {
         console.error(
           "Erro ao atualizar pontos:",
           pointsError
@@ -449,15 +621,18 @@ export default function AdminPage() {
       alert(
         "✅ Resultado atualizado com sucesso!"
       );
-
     } catch (error) {
       console.error(
         "Erro ao alterar resultado:",
         error
       );
 
-      if (error instanceof Error) {
-        alert(error.message);
+      if (
+        error instanceof Error
+      ) {
+        alert(
+          error.message
+        );
       }
     }
   }
@@ -466,39 +641,61 @@ export default function AdminPage() {
   // REPOR JOGO
   // =====================================================
 
-  async function handleReset(gameId: number) {
-    const game = games.find(
-      (item) => item.id === gameId
-    );
+  async function handleReset(
+    gameId: number
+  ) {
+    const game =
+      competitionGames.find(
+        (item) =>
+          item.id === gameId
+      );
 
-    const confirmReset = window.confirm(
-      `⚠️ Tens a certeza que queres repor ${game?.round}?\n\nO resultado, os pontos e o histórico desta jornada serão apagados.`
-    );
+    const confirmReset =
+      window.confirm(
+        `⚠️ Tens a certeza que queres repor ${game?.round}?\n\nO resultado, os pontos e o histórico desta jornada serão apagados.`
+      );
 
     if (!confirmReset) {
       return;
     }
 
     try {
-      await resetResult(gameId);
+      await resetResult(
+        gameId,
+        competition
+      );
 
-      await resetPredictionPoints(gameId);
+      await resetPredictionPoints(
+        gameId,
+        competition
+      );
 
-      await resetPredictionHistory(gameId);
+      await resetPredictionHistory(
+        gameId,
+        competition
+      );
 
-      setResults((previous) => {
-        const updated = {
-          ...previous,
-        };
+      setResults(
+        (previous) => {
+          const updated = {
+            ...previous,
+          };
 
-        delete updated[gameId];
+          delete updated[
+            gameId
+          ];
 
-        return updated;
-      });
+          return updated;
+        }
+      );
 
-      setEditingGame(null);
+      setEditingGame(
+        null
+      );
 
-      setSelectedGame(gameId);
+      setSelectedGame(
+        gameId
+      );
 
       setHomeGoals(0);
       setAwayGoals(0);
@@ -506,15 +703,18 @@ export default function AdminPage() {
       alert(
         "✅ Jogo reposto com sucesso!"
       );
-
     } catch (error) {
       console.error(
         "Erro ao repor jogo:",
         error
       );
 
-      if (error instanceof Error) {
-        alert(error.message);
+      if (
+        error instanceof Error
+      ) {
+        alert(
+          error.message
+        );
       }
     }
   }
@@ -523,7 +723,10 @@ export default function AdminPage() {
   // LOADING
   // =====================================================
 
-  if (loading || loadingResults) {
+  if (
+    loading ||
+    loadingResults
+  ) {
     return null;
   }
 
@@ -565,41 +768,109 @@ export default function AdminPage() {
           </h1>
 
           {/* ================================================= */}
+          {/* COMPETIÇÃO */}
+          {/* ================================================= */}
+
+          <div className="mb-4 grid grid-cols-2 gap-2">
+
+            <button
+              onClick={() =>
+                handleCompetitionChange(
+                  "liga"
+                )
+              }
+              className={`rounded-xl py-3 text-sm font-bold transition ${
+                competition ===
+                "liga"
+                  ? "bg-zinc-600 text-white shadow-md"
+                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+              }`}
+            >
+              🇵🇹 Liga Portugal
+            </button>
+
+            <button
+              onClick={() =>
+                handleCompetitionChange(
+                  "champions"
+                )
+              }
+              className={`rounded-xl py-3 text-sm font-bold transition ${
+                competition ===
+                "champions"
+                  ? "bg-zinc-600 text-white shadow-md"
+                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+              }`}
+            >
+              ⭐ Champions League
+            </button>
+
+          </div>
+
+          {/* ================================================= */}
           {/* JOGOS PENDENTES */}
           {/* ================================================= */}
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-800 p-4">
 
-            <label className="mb-2 block text-xs font-semibold text-zinc-400">
-              Selecionar jogo
-            </label>
+            <div className="mb-3 flex items-center justify-between">
 
-            {pendingGames.length > 0 ? (
+              <label className="block text-xs font-semibold text-zinc-400">
+                Selecionar jogo
+              </label>
+
+              <span className="text-[10px] font-bold uppercase text-zinc-500">
+                {competition ===
+                "liga"
+                  ? "Liga"
+                  : "Champions"}
+              </span>
+
+            </div>
+
+            {pendingGames.length >
+            0 ? (
 
               <>
 
                 <select
-                  value={selectedGame}
+                  value={
+                    selectedGame
+                  }
                   onChange={(e) =>
                     handleSelectGame(
-                      Number(e.target.value)
+                      Number(
+                        e.target
+                          .value
+                      )
                     )
                   }
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
                 >
 
-                  {pendingGames.map((game) => (
+                  {pendingGames.map(
+                    (game) => (
 
-                    <option
-                      key={game.id}
-                      value={game.id}
-                    >
-                      {game.round} •{" "}
-                      {game.homeTeam} vs{" "}
-                      {game.awayTeam}
-                    </option>
+                      <option
+                        key={
+                          game.id
+                        }
+                        value={
+                          game.id
+                        }
+                      >
+                        {game.round} •{" "}
+                        {
+                          game.homeTeam
+                        }{" "}
+                        vs{" "}
+                        {
+                          game.awayTeam
+                        }
+                      </option>
 
-                  ))}
+                    )
+                  )}
 
                 </select>
 
@@ -608,10 +879,15 @@ export default function AdminPage() {
                   <input
                     type="number"
                     min="0"
-                    value={homeGoals}
+                    value={
+                      homeGoals
+                    }
                     onChange={(e) =>
                       setHomeGoals(
-                        Number(e.target.value)
+                        Number(
+                          e.target
+                            .value
+                        )
                       )
                     }
                     className="rounded-lg border border-zinc-700 bg-zinc-900 py-2 text-center text-xl font-bold"
@@ -624,10 +900,15 @@ export default function AdminPage() {
                   <input
                     type="number"
                     min="0"
-                    value={awayGoals}
+                    value={
+                      awayGoals
+                    }
                     onChange={(e) =>
                       setAwayGoals(
-                        Number(e.target.value)
+                        Number(
+                          e.target
+                            .value
+                        )
                       )
                     }
                     className="rounded-lg border border-zinc-700 bg-zinc-900 py-2 text-center text-xl font-bold"
@@ -638,8 +919,12 @@ export default function AdminPage() {
                 {/* GUARDAR RESULTADO */}
 
                 <button
-                  onClick={handleSave}
-                  disabled={saving}
+                  onClick={
+                    handleSave
+                  }
+                  disabled={
+                    saving
+                  }
                   className="mt-4 w-full rounded-lg bg-[#0B5E3C] py-2.5 text-sm font-bold text-white transition hover:bg-[#0F7148] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
@@ -650,7 +935,9 @@ export default function AdminPage() {
                 {/* FECHAR PALPITES */}
 
                 <button
-                  onClick={handleClosePredictions}
+                  onClick={
+                    handleClosePredictions
+                  }
                   className="mt-3 w-full rounded-lg bg-zinc-700 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-600"
                 >
                   🔒 Fechar Palpites
@@ -659,7 +946,9 @@ export default function AdminPage() {
                 {/* ABRIR PALPITES */}
 
                 <button
-                  onClick={handleOpenPredictions}
+                  onClick={
+                    handleOpenPredictions
+                  }
                   className="mt-3 w-full rounded-lg bg-green-700 py-2.5 text-sm font-bold text-white transition hover:bg-green-600"
                 >
                   🔓 Abrir Palpites
@@ -669,7 +958,9 @@ export default function AdminPage() {
 
                 <button
                   onClick={() =>
-                    handleReset(selectedGame)
+                    handleReset(
+                      selectedGame
+                    )
                   }
                   className="mt-3 w-full rounded-lg bg-red-700 py-2.5 text-sm font-bold text-white transition hover:bg-red-600"
                 >
@@ -679,7 +970,9 @@ export default function AdminPage() {
                 {/* DATA / HORA */}
 
                 <button
-                  onClick={handleOpenSchedule}
+                  onClick={
+                    handleOpenSchedule
+                  }
                   className="mt-3 w-full rounded-lg bg-zinc-700 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-600"
                 >
                   🕐 Alterar Data/Hora
@@ -699,10 +992,13 @@ export default function AdminPage() {
 
                     <input
                       type="date"
-                      value={scheduleDate}
+                      value={
+                        scheduleDate
+                      }
                       onChange={(e) =>
                         setScheduleDate(
-                          e.target.value
+                          e.target
+                            .value
                         )
                       }
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white"
@@ -714,18 +1010,25 @@ export default function AdminPage() {
 
                     <input
                       type="time"
-                      value={scheduleTime}
+                      value={
+                        scheduleTime
+                      }
                       onChange={(e) =>
                         setScheduleTime(
-                          e.target.value
+                          e.target
+                            .value
                         )
                       }
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white"
                     />
 
                     <button
-                      onClick={handleSaveSchedule}
-                      disabled={savingSchedule}
+                      onClick={
+                        handleSaveSchedule
+                      }
+                      disabled={
+                        savingSchedule
+                      }
                       className="mt-3 w-full rounded-lg bg-[#0B5E3C] py-2.5 text-sm font-bold text-white transition hover:bg-[#0F7148] disabled:opacity-50"
                     >
                       {savingSchedule
@@ -738,9 +1041,11 @@ export default function AdminPage() {
                 )}
 
                 {saved && (
+
                   <div className="mt-4 rounded-lg bg-[#0B5E3C] py-2 text-center text-sm font-semibold">
                     ✅ Resultado guardado!
                   </div>
+
                 )}
 
               </>
@@ -759,7 +1064,8 @@ export default function AdminPage() {
           {/* JOGOS COMPLETOS */}
           {/* ================================================= */}
 
-          {completedGames.length > 0 && (
+          {completedGames.length >
+            0 && (
 
             <div className="mt-6">
 
@@ -769,119 +1075,147 @@ export default function AdminPage() {
 
               <div className="space-y-1">
 
-                {completedGames.map((game) => {
+                {completedGames.map(
+                  (game) => {
 
-                  const result =
-                    results[game.id];
+                    const result =
+                      results[
+                        game.id
+                      ];
 
-                  const isEditing =
-                    editingGame === game.id;
+                    const isEditing =
+                      editingGame ===
+                      game.id;
 
-                  return (
-                    <div key={game.id}>
+                    return (
 
-                      <button
-                        onClick={() =>
-                          isEditing
-                            ? setEditingGame(null)
-                            : handleEditGame(
-                                game.id
-                              )
+                      <div
+                        key={
+                          game.id
                         }
-                        className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-left text-sm font-semibold text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
                       >
 
-                        <div className="flex items-center justify-between">
-
-                          <span>
-                            {game.round} - COMPLETO
-                          </span>
-
-                          <span>
-                            {result.homeGoals} -{" "}
-                            {result.awayGoals}
-                          </span>
-
-                        </div>
-
-                      </button>
-
-                      {isEditing && (
-
-                        <div className="mt-1 rounded-lg bg-zinc-800 p-4">
-
-                          <p className="mb-3 text-center text-xs text-zinc-400">
-                            {game.homeTeam} vs{" "}
-                            {game.awayTeam}
-                          </p>
-
-                          <div className="grid grid-cols-3 items-center gap-2">
-
-                            <input
-                              type="number"
-                              min="0"
-                              value={
-                                editingHomeGoals
-                              }
-                              onChange={(e) =>
-                                setEditingHomeGoals(
-                                  Number(
-                                    e.target.value
-                                  )
+                        <button
+                          onClick={() =>
+                            isEditing
+                              ? setEditingGame(
+                                  null
                                 )
-                              }
-                              className="rounded-lg border border-zinc-700 bg-zinc-900 py-2 text-center text-xl font-bold"
-                            />
-
-                            <p className="text-center text-xl font-black text-zinc-500">
-                              -
-                            </p>
-
-                            <input
-                              type="number"
-                              min="0"
-                              value={
-                                editingAwayGoals
-                              }
-                              onChange={(e) =>
-                                setEditingAwayGoals(
-                                  Number(
-                                    e.target.value
-                                  )
+                              : handleEditGame(
+                                  game.id
                                 )
+                          }
+                          className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-left text-sm font-semibold text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
+                        >
+
+                          <div className="flex items-center justify-between">
+
+                            <span>
+                              {game.round}{" "}
+                              - COMPLETO
+                            </span>
+
+                            <span>
+                              {
+                                result.homeGoals
+                              }{" "}
+                              -{" "}
+                              {
+                                result.awayGoals
                               }
-                              className="rounded-lg border border-zinc-700 bg-zinc-900 py-2 text-center text-xl font-bold"
-                            />
+                            </span>
 
                           </div>
 
-                          <button
-                            onClick={
-                              handleSaveEdit
-                            }
-                            className="mt-3 w-full rounded-lg bg-[#0B5E3C] py-2.5 text-sm font-bold text-white transition hover:bg-[#0F7148]"
-                          >
-                            ✏️ Guardar Alteração
-                          </button>
+                        </button>
 
-                          <button
-                            onClick={() =>
-                              handleReset(
-                                game.id
-                              )
-                            }
-                            className="mt-3 w-full rounded-lg bg-red-700 py-2.5 text-sm font-bold text-white transition hover:bg-red-600"
-                          >
-                            🗑️ Repor Jogo
-                          </button>
+                        {isEditing && (
 
-                        </div>
+                          <div className="mt-1 rounded-lg bg-zinc-800 p-4">
 
-                      )}
+                            <p className="mb-3 text-center text-xs text-zinc-400">
+                              {
+                                game.homeTeam
+                              }{" "}
+                              vs{" "}
+                              {
+                                game.awayTeam
+                              }
+                            </p>
 
-                    </div>
-                  );
-                })}
+                            <div className="grid grid-cols-3 items-center gap-2">
+
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  editingHomeGoals
+                                }
+                                onChange={(e) =>
+                                  setEditingHomeGoals(
+                                    Number(
+                                      e
+                                        .target
+                                        .value
+                                    )
+                                  )
+                                }
+                                className="rounded-lg border border-zinc-700 bg-zinc-900 py-2 text-center text-xl font-bold"
+                              />
+
+                              <p className="text-center text-xl font-black text-zinc-500">
+                                -
+                              </p>
+
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  editingAwayGoals
+                                }
+                                onChange={(e) =>
+                                  setEditingAwayGoals(
+                                    Number(
+                                      e
+                                        .target
+                                        .value
+                                    )
+                                  )
+                                }
+                                className="rounded-lg border border-zinc-700 bg-zinc-900 py-2 text-center text-xl font-bold"
+                              />
+
+                            </div>
+
+                            <button
+                              onClick={
+                                handleSaveEdit
+                              }
+                              className="mt-3 w-full rounded-lg bg-[#0B5E3C] py-2.5 text-sm font-bold text-white transition hover:bg-[#0F7148]"
+                            >
+                              ✏️ Guardar Alteração
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                handleReset(
+                                  game.id
+                                )
+                              }
+                              className="mt-3 w-full rounded-lg bg-red-700 py-2.5 text-sm font-bold text-white transition hover:bg-red-600"
+                            >
+                              🗑️ Repor Jogo
+                            </button>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+                    );
+                  }
+                )}
 
               </div>
 

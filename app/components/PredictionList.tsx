@@ -11,9 +11,18 @@ import {
 
 import PredictionCard from "./PredictionCard";
 
-export default function PredictionList() {
-  const [predictions, setPredictions] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
+type PredictionListProps = {
+  competition?: "liga" | "champions";
+};
+
+export default function PredictionList({
+  competition = "liga",
+}: PredictionListProps) {
+  const [predictions, setPredictions] =
+    useState<any[]>([]);
+
+  const [history, setHistory] =
+    useState<any[]>([]);
 
   useEffect(() => {
     async function loadPredictions() {
@@ -21,43 +30,84 @@ export default function PredictionList() {
 
       if (!user) return;
 
-      const data = await getMyPredictions(user.code);
-
-      const historyData = await getPredictionHistory(
-        user.code
-      );
-      console.log("UTILIZADOR ATUAL:", user.code);
-console.log("HISTÓRICO RECEBIDO:", historyData);
-
-      // Palpites que ainda não têm resultado
-      const activePredictions = data
-        .filter((prediction) => !prediction.result)
-        .sort(
-          (a, b) => a.game.id - b.game.id
+      const data =
+        await getMyPredictions(
+          user.code,
+          competition
         );
 
-      setPredictions(activePredictions);
+      const historyData =
+        await getPredictionHistory(
+          user.code,
+          competition
+        );
+
+      console.log(
+        "UTILIZADOR ATUAL:",
+        user.code
+      );
+
+      console.log(
+        "COMPETIÇÃO:",
+        competition
+      );
+
+      console.log(
+        "HISTÓRICO RECEBIDO:",
+        historyData
+      );
+
+      // =================================================
+      // PALPITES QUE AINDA NÃO TÊM RESULTADO
+      // =================================================
+
+      const activePredictions =
+        data
+          .filter(
+            (prediction) =>
+              !prediction.result
+          )
+          .sort(
+            (a, b) =>
+              a.game.id -
+              b.game.id
+          );
+
+      setPredictions(
+        activePredictions
+      );
+
       setHistory(historyData);
     }
 
     loadPredictions();
-  }, []);
+  }, [competition]);
+
+  // =====================================================
+  // APAGAR PALPITE
+  // =====================================================
 
   async function handleDelete(
     id: string,
     gameId: number
   ) {
-    const confirmDelete = window.confirm(
-      "Queres apagar este palpite?"
-    );
+    const confirmDelete =
+      window.confirm(
+        "Queres apagar este palpite?"
+      );
 
     if (!confirmDelete) return;
 
-    await deletePrediction(id, gameId);
+    await deletePrediction(
+      id,
+      gameId,
+      competition
+    );
 
     setPredictions((prev) =>
       prev.filter(
-        (prediction) => prediction.id !== id
+        (prediction) =>
+          prediction.id !== id
       )
     );
   }
@@ -71,6 +121,7 @@ console.log("HISTÓRICO RECEBIDO:", historyData);
 
       {history.length > 0 && (
         <div>
+
           <h2 className="mb-3 text-lg font-black">
             📋 Histórico
           </h2>
@@ -82,16 +133,19 @@ console.log("HISTÓRICO RECEBIDO:", historyData);
                 <div
                   key={item.id}
                   className={`flex items-center justify-between px-4 py-3 text-sm ${
-                    index !== history.length - 1
+                    index !==
+                    history.length - 1
                       ? "border-b border-zinc-700"
                       : ""
                   }`}
                 >
 
                   <span className="font-semibold text-zinc-400">
-                    {String(item.round).startsWith("J")
+                    {String(
+                      item.round
+                    ).startsWith("J")
                       ? item.round
-                     : `J${item.round}`}
+                      : `J${item.round}`}
                   </span>
 
                   <span className="font-bold">
@@ -108,6 +162,7 @@ console.log("HISTÓRICO RECEBIDO:", historyData);
             )}
 
           </div>
+
         </div>
       )}
 
@@ -117,6 +172,7 @@ console.log("HISTÓRICO RECEBIDO:", historyData);
 
       {predictions.length > 0 && (
         <div>
+
           <h2 className="mb-3 text-lg font-black">
             🎯 Palpites
           </h2>
@@ -127,7 +183,9 @@ console.log("HISTÓRICO RECEBIDO:", historyData);
               (prediction) => (
                 <PredictionCard
                   key={prediction.id}
-                  prediction={prediction}
+                  prediction={
+                    prediction
+                  }
                   onDelete={() =>
                     handleDelete(
                       prediction.id,
@@ -139,6 +197,7 @@ console.log("HISTÓRICO RECEBIDO:", historyData);
             )}
 
           </div>
+
         </div>
       )}
 

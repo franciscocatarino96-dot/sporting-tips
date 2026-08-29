@@ -20,6 +20,8 @@ import { users } from "../lib/users";
 
 import { getGameSchedule } from "../lib/gameSchedule";
 
+import type { Competition } from "../lib/types";
+
 type GameCardProps = {
   id: number;
   homeTeam: string;
@@ -29,6 +31,7 @@ type GameCardProps = {
   date: string;
   time: string;
   round: string;
+  competition?: Competition;
 };
 
 function formatDate(date: string) {
@@ -47,24 +50,18 @@ function formatDate(date: string) {
     "Dez",
   ];
 
-  const d = new Date(
-    `${date}T12:00:00`
-  );
+  const d = new Date(`${date}T12:00:00`);
 
-  return `${String(d.getDate()).padStart(
-    2,
-    "0"
-  )} ${months[d.getMonth()]}`;
+  return `${String(d.getDate()).padStart(2, "0")} ${
+    months[d.getMonth()]
+  }`;
 }
 
 // =====================================================
 // CONVERTER HORA DE LISBOA PARA HORA LOCAL
 // =====================================================
 
-function formatLocalTime(
-  date: string,
-  time: string
-) {
+function formatLocalTime(date: string, time: string) {
   const [year, month, day] =
     date.split("-").map(Number);
 
@@ -81,63 +78,51 @@ function formatLocalTime(
     )
   );
 
-  const formatter =
-    new Intl.DateTimeFormat(
-      "en-US",
-      {
-        timeZone: "Europe/Lisbon",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hourCycle: "h23",
-      }
-    );
+  const formatter = new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone: "Europe/Lisbon",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }
+  );
 
   const parts =
-    formatter.formatToParts(
-      reference
-    );
+    formatter.formatToParts(reference);
 
-  const values: Record<
-    string,
-    number
-  > = {};
+  const values: Record<string, number> = {};
 
   for (const part of parts) {
     if (
       part.type !== "literal" &&
       part.type !== "timeZoneName"
     ) {
-      values[part.type] = Number(
-        part.value
-      );
+      values[part.type] = Number(part.value);
     }
   }
 
-  const lisbonAsUTC =
-    Date.UTC(
-      values.year,
-      values.month - 1,
-      values.day,
-      values.hour,
-      values.minute,
-      values.second
-    );
+  const lisbonAsUTC = Date.UTC(
+    values.year,
+    values.month - 1,
+    values.day,
+    values.hour,
+    values.minute,
+    values.second
+  );
 
   const offset =
-    lisbonAsUTC -
-    reference.getTime();
+    lisbonAsUTC - reference.getTime();
 
   const kickoffTimestamp =
-    reference.getTime() -
-    offset;
+    reference.getTime() - offset;
 
-  const localDate = new Date(
-    kickoffTimestamp
-  );
+  const localDate =
+    new Date(kickoffTimestamp);
 
   return localDate.toLocaleTimeString(
     "pt-PT",
@@ -178,6 +163,30 @@ function shortName(team: string) {
     case "Est. Amadora":
       return "Estrela";
 
+    case "Galatasaray":
+      return "Galatasaray";
+
+    case "Lens":
+      return "Lens";
+
+    case "LASK":
+      return "LASK";
+
+    case "Shakhtar":
+      return "Shakhtar";
+
+    case "Man Utd":
+      return "Man Utd";
+
+    case "Roma":
+      return "Roma";
+
+    case "Barcelona":
+      return "Barcelona";
+
+    case "Man City":
+      return "Man City";
+
     default:
       return team;
   }
@@ -192,6 +201,7 @@ export default function GameCard({
   date,
   time,
   round,
+  competition = "liga",
 }: GameCardProps) {
   const [result, setResult] =
     useState<{
@@ -230,7 +240,10 @@ export default function GameCard({
         // -------------------------------------------------
 
         const customSchedule =
-          await getGameSchedule(id);
+          await getGameSchedule(
+            id,
+            competition
+          );
 
         const currentDate =
           customSchedule?.date ?? date;
@@ -246,7 +259,10 @@ export default function GameCard({
         // -------------------------------------------------
 
         const resultData =
-          await getResult(id);
+          await getResult(
+            id,
+            competition
+          );
 
         if (resultData) {
           setResult({
@@ -255,6 +271,8 @@ export default function GameCard({
             awayGoals:
               resultData.awayGoals,
           });
+        } else {
+          setResult(null);
         }
 
         // -------------------------------------------------
@@ -268,7 +286,8 @@ export default function GameCard({
           const prediction =
             await getPrediction(
               user.code,
-              id
+              id,
+              competition
             );
 
           setHasPrediction(
@@ -282,7 +301,8 @@ export default function GameCard({
 
         const predictions =
           await getPredictionsByGame(
-            id
+            id,
+            competition
           );
 
         setPredictionCount(
@@ -295,7 +315,8 @@ export default function GameCard({
 
         const closed =
           await arePredictionsClosed(
-            id
+            id,
+            competition
           );
 
         setPredictionsClosed(
@@ -311,7 +332,12 @@ export default function GameCard({
     }
 
     loadGameData();
-  }, [id, date, time]);
+  }, [
+    id,
+    date,
+    time,
+    competition,
+  ]);
 
   // =====================================================
   // PALPITES ABERTOS
@@ -334,10 +360,21 @@ export default function GameCard({
       gameTime
     );
 
+  // =====================================================
+  // LINK PARA O JOGO
+  // =====================================================
+
+  const gameLink =
+    competition === "champions"
+      ? `/champions/game/${id}`
+      : `/game/${id}`;
+
   return (
     <div>
 
-      {/* CABEÇALHO */}
+      {/* =====================================================
+          CABEÇALHO
+      ===================================================== */}
 
       <div className="flex items-center justify-between border-b border-zinc-700 px-4 py-2 text-[11px] text-zinc-500">
 
@@ -352,7 +389,9 @@ export default function GameCard({
 
       </div>
 
-      {/* JOGO */}
+      {/* =====================================================
+          JOGO
+      ===================================================== */}
 
       <div className="px-4 py-4">
 
@@ -408,9 +447,11 @@ export default function GameCard({
 
         </div>
 
-        {/* BOTÃO */}
+        {/* =====================================================
+            BOTÃO
+        ===================================================== */}
 
-        <Link href={`/game/${id}`}>
+        <Link href={gameLink}>
 
           {result ? (
 
@@ -448,7 +489,9 @@ export default function GameCard({
 
         </Link>
 
-        {/* CONTADOR */}
+        {/* =====================================================
+            CONTADOR
+        ===================================================== */}
 
         <p className="mt-2 text-center text-sm font-semibold text-zinc-500">
           {predictionCount} de{" "}

@@ -8,32 +8,55 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user } = useAuth();
 
+  // =====================================================
+  // SABER QUAL É A COMPETIÇÃO
+  // =====================================================
+
+  const isChampions =
+    pathname.startsWith("/champions");
+
+  // =====================================================
+  // CAMINHOS
+  // =====================================================
+
+  const basePath = isChampions
+    ? "/champions"
+    : "";
+
+  // =====================================================
+  // MENU
+  // =====================================================
+
   const items = [
     {
-      href: "/",
+      href: basePath || "/",
       icon: "⚽",
       label: "Jogos",
     },
     {
-      href: "/palpites",
+      href: `${basePath}/palpites`,
       icon: "📊",
       label: "Palpites",
     },
     {
-      href: "/classificacao",
+      href: `${basePath}/classificacao`,
       icon: "🏆",
       label: "Classificação",
     },
     {
-      href: "/regulamento",
+      href: `${basePath}/regulamento`,
       icon: "📖",
       label: "Regras",
     },
   ];
 
+  // =====================================================
+  // ADMIN
+  // =====================================================
+
   if (user?.admin) {
     items.push({
-      href: "/admin",
+      href: `${basePath}/admin`,
       icon: "🛠️",
       label: "Admin",
     });
@@ -43,7 +66,9 @@ export default function Navbar() {
     <nav className="mt-3 flex gap-2 overflow-x-auto">
 
       {items.map((item) => {
-        const active = pathname === item.href;
+
+        const active =
+          pathname === item.href;
 
         return (
           <Link
@@ -55,9 +80,15 @@ export default function Navbar() {
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
             }`}
           >
-            <span>{item.icon}</span>
 
-            <span>{item.label}</span>
+            <span>
+              {item.icon}
+            </span>
+
+            <span>
+              {item.label}
+            </span>
+
           </Link>
         );
       })}

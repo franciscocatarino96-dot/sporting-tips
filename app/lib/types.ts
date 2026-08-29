@@ -1,3 +1,5 @@
+export type Competition = "liga" | "champions";
+
 export type Prediction = {
   id: string;
   userCode: string;
@@ -7,6 +9,10 @@ export type Prediction = {
   homeGoals: number;
   awayGoals: number;
   points: number;
-
   game: any;
+
+  // Liga ou Champions
+  // É opcional para manter compatibilidade
+  // com os palpites antigos da Liga.
+  competition?: Competition;
 };

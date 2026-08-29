@@ -12,53 +12,137 @@ import {
 } from "firebase/firestore";
 
 import { db } from "./firebase";
-import { Prediction } from "./types";
+
+import {
+  Prediction,
+  Competition,
+} from "./types";
+
 import { games } from "./games";
+import { championsGames } from "./championsGames";
+
 import { isPredictionOpen } from "./gameStatus";
+
 import { getResult } from "./results";
+
+
+// =====================================================
+// ID DO PALPITE
+// =====================================================
+
+function getPredictionId(
+  userCode: string,
+  gameId: number,
+  competition: Competition
+) {
+  if (competition === "liga") {
+    return `${userCode}_${gameId}`;
+  }
+
+  return `champions_${userCode}_${gameId}`;
+}
+
+
+// =====================================================
+// OBTER JOGO
+// =====================================================
+
+function getGame(
+  gameId: number,
+  competition: Competition
+) {
+  if (competition === "liga") {
+    return games.find(
+      (game) => game.id === gameId
+    );
+  }
+
+  return championsGames.find(
+    (game) => game.id === gameId
+  );
+}
+
 
 // =====================================================
 // VERIFICAR SE OS PALPITES ESTÃO FECHADOS
 // =====================================================
 
 export async function arePredictionsClosed(
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ): Promise<boolean> {
+
+  const closedId =
+    competition === "liga"
+      ? `${gameId}`
+      : `champions_${gameId}`;
+
   const snapshot = await getDoc(
-    doc(db, "closedPredictions", `${gameId}`)
+    doc(
+      db,
+      "closedPredictions",
+      closedId
+    )
   );
 
   return snapshot.exists();
 }
+
 
 // =====================================================
 // FECHAR PALPITES
 // =====================================================
 
 export async function closePredictions(
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ) {
+
+  const closedId =
+    competition === "liga"
+      ? `${gameId}`
+      : `champions_${gameId}`;
+
   await setDoc(
-    doc(db, "closedPredictions", `${gameId}`),
+    doc(
+      db,
+      "closedPredictions",
+      closedId
+    ),
     {
       gameId,
+      competition,
       closed: true,
-      closedAt: new Date().toISOString(),
+      closedAt:
+        new Date().toISOString(),
     }
   );
 }
+
 
 // =====================================================
 // ABRIR PALPITES
 // =====================================================
 
 export async function openPredictions(
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ) {
+
+  const closedId =
+    competition === "liga"
+      ? `${gameId}`
+      : `champions_${gameId}`;
+
   await deleteDoc(
-    doc(db, "closedPredictions", `${gameId}`)
+    doc(
+      db,
+      "closedPredictions",
+      closedId
+    )
   );
 }
+
 
 // =====================================================
 // GUARDAR PALPITE
@@ -69,19 +153,30 @@ export async function savePrediction(
   userName: string,
   gameId: number,
   homeGoals: number,
-  awayGoals: number
+  awayGoals: number,
+  competition: Competition = "liga"
 ) {
-  const game = games.find(
-    (g) => g.id === gameId
+
+  const game = getGame(
+    gameId,
+    competition
   );
 
   if (!game) {
-    throw new Error("Jogo não encontrado.");
+    throw new Error(
+      "Jogo não encontrado."
+    );
   }
 
-  const closed = await arePredictionsClosed(
-    gameId
-  );
+  // ---------------------------------------------------
+  // VERIFICAR SE ESTÁ FECHADO MANUALMENTE
+  // ---------------------------------------------------
+
+  const closed =
+    await arePredictionsClosed(
+      gameId,
+      competition
+    );
 
   if (closed) {
     throw new Error(
@@ -89,16 +184,42 @@ export async function savePrediction(
     );
   }
 
-  if (!isPredictionOpen(game.date, game.time)) {
+  // ---------------------------------------------------
+  // VERIFICAR HORÁRIO
+  // ---------------------------------------------------
+
+  if (
+    !isPredictionOpen(
+      game.date,
+      game.time
+    )
+  ) {
     throw new Error(
       "Os palpites para este jogo já encerraram."
     );
   }
 
-  const predictionId = `${userCode}_${gameId}`;
+  // ---------------------------------------------------
+  // ID
+  // ---------------------------------------------------
+
+  const predictionId =
+    getPredictionId(
+      userCode,
+      gameId,
+      competition
+    );
+
+  // ---------------------------------------------------
+  // GUARDAR
+  // ---------------------------------------------------
 
   await setDoc(
-    doc(db, "predictions", predictionId),
+    doc(
+      db,
+      "predictions",
+      predictionId
+    ),
     {
       userCode,
       userName,
@@ -107,10 +228,13 @@ export async function savePrediction(
       homeGoals,
       awayGoals,
       points: 0,
-      createdAt: new Date().toISOString(),
+      competition,
+      createdAt:
+        new Date().toISOString(),
     }
   );
 }
+
 
 // =====================================================
 // OBTER UM PALPITE
@@ -118,13 +242,22 @@ export async function savePrediction(
 
 export async function getPrediction(
   userCode: string,
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ): Promise<Prediction | null> {
+
+  const predictionId =
+    getPredictionId(
+      userCode,
+      gameId,
+      competition
+    );
+
   const snapshot = await getDoc(
     doc(
       db,
       "predictions",
-      `${userCode}_${gameId}`
+      predictionId
     )
   );
 
@@ -141,74 +274,152 @@ export async function getPrediction(
   };
 }
 
+
 // =====================================================
 // OBTER OS MEUS PALPITES
 // =====================================================
 
 export async function getMyPredictions(
-  userCode: string
+  userCode: string,
+  competition: Competition = "liga"
 ): Promise<any[]> {
+
   const q = query(
     collection(db, "predictions"),
-    where("userCode", "==", userCode)
+    where(
+      "userCode",
+      "==",
+      userCode
+    )
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot =
+    await getDocs(q);
+
+  const filteredDocs =
+    snapshot.docs.filter(
+      (docSnapshot) => {
+
+        const data =
+          docSnapshot.data();
+
+        // ------------------------------------------------
+        // COMPATIBILIDADE COM PALPITES ANTIGOS DA LIGA
+        // ------------------------------------------------
+
+        if (
+          competition === "liga" &&
+          !data.competition
+        ) {
+          return true;
+        }
+
+        return (
+          data.competition ===
+          competition
+        );
+      }
+    );
 
   return Promise.all(
-    snapshot.docs.map(async (docSnapshot) => {
-      const prediction = {
-        id: docSnapshot.id,
-        ...(docSnapshot.data() as Omit<
-          Prediction,
-          "id"
-        >),
-      };
+    filteredDocs.map(
+      async (docSnapshot) => {
 
-      const game = games.find(
-        (g) => g.id === prediction.gameId
-      );
+        const prediction = {
+          id: docSnapshot.id,
+          ...(docSnapshot.data() as Omit<
+            Prediction,
+            "id"
+          >),
+        };
 
-      const result = await getResult(
-        prediction.gameId
-      );
+        const game =
+          getGame(
+            prediction.gameId,
+            competition
+          );
 
-      const closed = await arePredictionsClosed(
-        prediction.gameId
-      );
+        const result =
+          await getResult(
+            prediction.gameId,
+            competition
+          );
 
-      return {
-        ...prediction,
-        game,
-        result,
-        predictionsOpen: !closed,
-      };
-    })
+        const closed =
+          await arePredictionsClosed(
+            prediction.gameId,
+            competition
+          );
+
+        return {
+          ...prediction,
+          game,
+          result,
+          predictionsOpen:
+            !closed,
+        };
+      }
+    )
   );
 }
+
 
 // =====================================================
 // OBTER PALPITES DE UM JOGO
 // =====================================================
 
 export async function getPredictionsByGame(
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ): Promise<Prediction[]> {
+
   const q = query(
     collection(db, "predictions"),
-    where("gameId", "==", gameId)
+    where(
+      "gameId",
+      "==",
+      gameId
+    )
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot =
+    await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as Omit<
-      Prediction,
-      "id"
-    >),
-  }));
+  return snapshot.docs
+    .filter(
+      (docSnapshot) => {
+
+        const data =
+          docSnapshot.data();
+
+        // ------------------------------------------------
+        // PALPITES ANTIGOS DA LIGA
+        // ------------------------------------------------
+
+        if (
+          competition === "liga" &&
+          !data.competition
+        ) {
+          return true;
+        }
+
+        return (
+          data.competition ===
+          competition
+        );
+      }
+    )
+    .map(
+      (docSnapshot) => ({
+        id: docSnapshot.id,
+        ...(docSnapshot.data() as Omit<
+          Prediction,
+          "id"
+        >),
+      })
+    );
 }
+
 
 // =====================================================
 // ATUALIZAR PONTOS
@@ -218,58 +429,134 @@ export async function updatePredictionPoints(
   predictionId: string,
   points: number
 ) {
+
   await updateDoc(
-    doc(db, "predictions", predictionId),
+    doc(
+      db,
+      "predictions",
+      predictionId
+    ),
     {
       points,
     }
   );
 }
 
+
 // =====================================================
 // OBTER TODOS OS PALPITES
 // =====================================================
 
-export async function getAllPredictions(): Promise<
-  Prediction[]
-> {
-  const snapshot = await getDocs(
-    collection(db, "predictions")
-  );
+export async function getAllPredictions(
+  competition: Competition = "liga"
+): Promise<Prediction[]> {
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as Omit<
-      Prediction,
-      "id"
-    >),
-  }));
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "predictions"
+      )
+    );
+
+  return snapshot.docs
+    .filter(
+      (docSnapshot) => {
+
+        const data =
+          docSnapshot.data();
+
+        // ------------------------------------------------
+        // DADOS ANTIGOS = LIGA
+        // ------------------------------------------------
+
+        if (
+          competition === "liga" &&
+          !data.competition
+        ) {
+          return true;
+        }
+
+        return (
+          data.competition ===
+          competition
+        );
+      }
+    )
+    .map(
+      (docSnapshot) => ({
+        id: docSnapshot.id,
+        ...(docSnapshot.data() as Omit<
+          Prediction,
+          "id"
+        >),
+      })
+    );
 }
+
 
 // =====================================================
 // REPOR PONTOS DE UM JOGO
 // =====================================================
 
 export async function resetPredictionPoints(
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ) {
+
   const q = query(
-    collection(db, "predictions"),
-    where("gameId", "==", gameId)
+    collection(
+      db,
+      "predictions"
+    ),
+    where(
+      "gameId",
+      "==",
+      gameId
+    )
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot =
+    await getDocs(q);
 
-  const batch = writeBatch(db);
+  const batch =
+    writeBatch(db);
 
-  snapshot.docs.forEach((docSnapshot) => {
-    batch.update(docSnapshot.ref, {
-      points: 0,
-    });
-  });
+  snapshot.docs
+    .filter(
+      (docSnapshot) => {
+
+        const data =
+          docSnapshot.data();
+
+        if (
+          competition === "liga" &&
+          !data.competition
+        ) {
+          return true;
+        }
+
+        return (
+          data.competition ===
+          competition
+        );
+      }
+    )
+    .forEach(
+      (docSnapshot) => {
+
+        batch.update(
+          docSnapshot.ref,
+          {
+            points: 0,
+          }
+        );
+      }
+    );
 
   await batch.commit();
 }
+
 
 // =====================================================
 // APAGAR PALPITE
@@ -277,11 +564,15 @@ export async function resetPredictionPoints(
 
 export async function deletePrediction(
   predictionId: string,
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ) {
-  const closed = await arePredictionsClosed(
-    gameId
-  );
+
+  const closed =
+    await arePredictionsClosed(
+      gameId,
+      competition
+    );
 
   if (closed) {
     throw new Error(
@@ -290,9 +581,14 @@ export async function deletePrediction(
   }
 
   await deleteDoc(
-    doc(db, "predictions", predictionId)
+    doc(
+      db,
+      "predictions",
+      predictionId
+    )
   );
 }
+
 
 // =====================================================
 // GUARDAR PALPITE NO HISTÓRICO
@@ -300,9 +596,14 @@ export async function deletePrediction(
 
 export async function savePredictionHistory(
   prediction: Prediction,
-  points: number
+  points: number,
+  competition: Competition = "liga"
 ) {
-  const historyId = `${prediction.userCode}_${prediction.gameId}`;
+
+  const historyId =
+    competition === "liga"
+      ? `${prediction.userCode}_${prediction.gameId}`
+      : `champions_${prediction.userCode}_${prediction.gameId}`;
 
   await setDoc(
     doc(
@@ -311,56 +612,120 @@ export async function savePredictionHistory(
       historyId
     ),
     {
-      userCode: prediction.userCode,
-      userName: prediction.userName,
-      gameId: prediction.gameId,
-      round: prediction.round,
-      homeGoals: prediction.homeGoals,
-      awayGoals: prediction.awayGoals,
+      userCode:
+        prediction.userCode,
+
+      userName:
+        prediction.userName,
+
+      gameId:
+        prediction.gameId,
+
+      round:
+        prediction.round,
+
+      homeGoals:
+        prediction.homeGoals,
+
+      awayGoals:
+        prediction.awayGoals,
+
       points,
-      savedAt: new Date().toISOString(),
+
+      competition,
+
+      savedAt:
+        new Date().toISOString(),
     }
   );
 }
+
 
 // =====================================================
 // OBTER HISTÓRICO DE PALPITES
 // =====================================================
 
 export async function getPredictionHistory(
-  userCode: string
+  userCode: string,
+  competition: Competition = "liga"
 ): Promise<any[]> {
+
   const q = query(
-    collection(db, "predictionHistory"),
-    where("userCode", "==", userCode)
+    collection(
+      db,
+      "predictionHistory"
+    ),
+    where(
+      "userCode",
+      "==",
+      userCode
+    )
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot =
+    await getDocs(q);
 
-  const allHistory = snapshot.docs.map((docSnapshot) => ({
-    id: docSnapshot.id,
-    ...(docSnapshot.data() as {
-      userCode: string;
-      userName: string;
-      gameId: number;
-      round: string;
-      homeGoals: number;
-      awayGoals: number;
-      points: number;
-      savedAt: string;
-    }),
-  }));
+  const allHistory =
+    snapshot.docs
+      .filter(
+        (docSnapshot) => {
 
-  // Se existirem vários registos antigos da mesma jornada,
-  // ficamos apenas com o mais recente.
-  const latestByGame = new Map<number, any>();
+          const data =
+            docSnapshot.data();
+
+          // ------------------------------------------------
+          // HISTÓRICO ANTIGO = LIGA
+          // ------------------------------------------------
+
+          if (
+            competition === "liga" &&
+            !data.competition
+          ) {
+            return true;
+          }
+
+          return (
+            data.competition ===
+            competition
+          );
+        }
+      )
+      .map(
+        (docSnapshot) => ({
+          id: docSnapshot.id,
+
+          ...(docSnapshot.data() as {
+            userCode: string;
+            userName: string;
+            gameId: number;
+            round: string;
+            homeGoals: number;
+            awayGoals: number;
+            points: number;
+            savedAt: string;
+            competition?: Competition;
+          }),
+        })
+      );
+
+  // =====================================================
+  // FICAR COM O MAIS RECENTE
+  // =====================================================
+
+  const latestByGame =
+    new Map<number, any>();
 
   for (const item of allHistory) {
-    const existing = latestByGame.get(item.gameId);
+
+    const existing =
+      latestByGame.get(
+        item.gameId
+      );
 
     if (
       !existing ||
-      item.savedAt > existing.savedAt
+      item.savedAt >
+        existing.savedAt
     ) {
       latestByGame.set(
         item.gameId,
@@ -372,29 +737,68 @@ export async function getPredictionHistory(
   return Array.from(
     latestByGame.values()
   ).sort(
-    (a, b) => a.gameId - b.gameId
+    (a, b) =>
+      a.gameId -
+      b.gameId
   );
 }
+
 
 // =====================================================
 // APAGAR HISTÓRICO DE UM JOGO
 // =====================================================
 
 export async function resetPredictionHistory(
-  gameId: number
+  gameId: number,
+  competition: Competition = "liga"
 ) {
+
   const q = query(
-    collection(db, "predictionHistory"),
-    where("gameId", "==", gameId)
+    collection(
+      db,
+      "predictionHistory"
+    ),
+    where(
+      "gameId",
+      "==",
+      gameId
+    )
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot =
+    await getDocs(q);
 
-  const batch = writeBatch(db);
+  const batch =
+    writeBatch(db);
 
-  snapshot.docs.forEach((docSnapshot) => {
-    batch.delete(docSnapshot.ref);
-  });
+  snapshot.docs
+    .filter(
+      (docSnapshot) => {
+
+        const data =
+          docSnapshot.data();
+
+        if (
+          competition === "liga" &&
+          !data.competition
+        ) {
+          return true;
+        }
+
+        return (
+          data.competition ===
+          competition
+        );
+      }
+    )
+    .forEach(
+      (docSnapshot) => {
+
+        batch.delete(
+          docSnapshot.ref
+        );
+      }
+    );
 
   await batch.commit();
 }

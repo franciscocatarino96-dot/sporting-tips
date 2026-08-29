@@ -7,74 +7,130 @@ import {
 } from "./predictions";
 
 import { calculatePoints } from "./calculatePoints";
-import { games } from "./games";
 
-export async function updatePoints(gameId: number) {
-  const result = await getResult(gameId);
+import { games } from "./games";
+import { championsGames } from "./championsGames";
+
+import { Competition } from "./types";
+
+export async function updatePoints(
+  gameId: number,
+  competition: Competition = "liga"
+) {
+  // =====================================================
+  // RESULTADO
+  // =====================================================
+
+  const result = await getResult(
+    gameId,
+    competition
+  );
 
   if (!result) {
     return;
   }
 
-  const game = games.find((g) => g.id === gameId);
+  // =====================================================
+  // JOGO
+  // =====================================================
+
+  const game =
+    competition === "liga"
+      ? games.find(
+          (g) => g.id === gameId
+        )
+      : championsGames.find(
+          (g) => g.id === gameId
+        );
 
   if (!game) {
     return;
   }
 
-  const sportingHome = game.homeTeam === "Sporting CP";
+  // =====================================================
+  // SPORTING CASA/FORA
+  // =====================================================
 
-  const predictions = await getPredictionsByGame(gameId);
-  console.log("=================================");
-console.log("ATUALIZAR JOGO:", gameId);
-console.log("RESULTADO:", result);
-console.log("PALPITES:", predictions);
+  const sportingHome =
+    game.homeTeam === "Sporting CP";
 
-for (const prediction of predictions) {
+  // =====================================================
+  // OBTER PALPITES
+  // =====================================================
+
+  const predictions =
+    await getPredictionsByGame(
+      gameId,
+      competition
+    );
+
   console.log(
-    prediction.userCode,
-    "PALPITE:",
-    prediction.homeGoals,
-    "-",
-    prediction.awayGoals,
-    "PONTOS ANTES:",
-    prediction.points
+    "================================="
   );
-}
-console.log("=================================");
 
-  console.log("JOGO:", gameId);
-console.log("PALPITES ENCONTRADOS:", predictions);
+  console.log(
+    "ATUALIZAR JOGO:",
+    gameId,
+    competition
+  );
+
+  console.log(
+    "RESULTADO:",
+    result
+  );
+
+  console.log(
+    "PALPITES:",
+    predictions
+  );
+
+  console.log(
+    "================================="
+  );
+
+  // =====================================================
+  // CALCULAR PONTOS
+  // =====================================================
 
   for (const prediction of predictions) {
-    console.log(
-    "GUARDAR HISTÓRICO:",
-    prediction.userCode,
-    prediction.gameId,
-    prediction.homeGoals,
-    prediction.awayGoals
-    );
-    
-    const points = calculatePoints(
-      {
-        homeGoals: prediction.homeGoals,
-        awayGoals: prediction.awayGoals,
-      },
-      {
-        homeGoals: result.homeGoals,
-        awayGoals: result.awayGoals,
-      },
-      sportingHome
-    );
+    const points =
+      calculatePoints(
+        {
+          homeGoals:
+            prediction.homeGoals,
+
+          awayGoals:
+            prediction.awayGoals,
+        },
+
+        {
+          homeGoals:
+            result.homeGoals,
+
+          awayGoals:
+            result.awayGoals,
+        },
+
+        sportingHome
+      );
+
+    // ===============================================
+    // ATUALIZAR PONTOS
+    // ===============================================
 
     await updatePredictionPoints(
       prediction.id,
       points
     );
 
+    // ===============================================
+    // GUARDAR HISTÓRICO
+    // ===============================================
+
     await savePredictionHistory(
-       prediction,
-       points
+      prediction,
+      points,
+      competition
     );
   }
 }

@@ -1,7 +1,7 @@
-import Header from "../components/Header";
-import Navbar from "../components/Navbar";
+import Header from "../../components/Header";
+import Navbar from "../../components/Navbar";
 
-export default function RegulamentoPage() {
+export default function ChampionsRegulamentoPage() {
   return (
     <main className="min-h-screen bg-zinc-900 text-white">
       <div className="mx-auto max-w-5xl px-4">
@@ -22,15 +22,15 @@ export default function RegulamentoPage() {
 
           <Section title="🏆 Objetivo">
             <p>
-              A <strong>Liga Palpites</strong> é um concurso privado de palpites
-              dedicado aos jogos do Sporting Clube de Portugal na Liga Portugal
-              Betclic 2026/27.
+              A <strong>Champions Palpites</strong> é o desafio onde os
+              verdadeiros especialistas de sofá vão tentar provar que sabem
+              mais de futebol do que o amigo do lado.
             </p>
 
             <p className="mt-3">
-              Ao longo da época, os participantes acumulam pontos jornada após
-              jornada. No final da temporada será apurada a classificação final
-              e atribuídos os respetivos prémios.
+              Ao longo da competição, os participantes acumulam pontos jogo
+              após jogo. No final, apenas um poderá dizer que é o verdadeiro
+              mestre dos palpites — os outros terão de arranjar desculpas.
             </p>
           </Section>
 
@@ -39,7 +39,10 @@ export default function RegulamentoPage() {
           <Section title="👥 Participantes">
             <ul className="list-disc space-y-2 pl-5">
               <li>O concurso é exclusivo para os membros do grupo.</li>
-              <li>Não serão aceites novos participantes após o início da competição.</li>
+              <li>
+                Não serão aceites novos participantes após o início da
+                competição.
+              </li>
             </ul>
           </Section>
 
@@ -47,9 +50,19 @@ export default function RegulamentoPage() {
 
           <Section title="⏰ Palpites">
             <ul className="list-disc space-y-2 pl-5">
-              <li>Os palpites são submetidos através da aplicação.</li>
-              <li>Os palpites encerram <strong>5 minutos antes</strong> do início oficial do jogo.</li>
-              <li>Após o fecho não é possível alterar nem submeter novos palpites.</li>
+              <li>
+                Os palpites são submetidos através da aplicação.
+              </li>
+
+              <li>
+                Os palpites encerram{" "}
+                <strong>5 minutos antes</strong> do início oficial do jogo.
+              </li>
+
+              <li>
+                Após o fecho não é possível alterar nem submeter novos
+                palpites.
+              </li>
             </ul>
           </Section>
 
@@ -57,9 +70,17 @@ export default function RegulamentoPage() {
 
           <Section title="⚽ Resultado Válido">
             <ul className="list-disc space-y-2 pl-5">
-              <li>Conta apenas o resultado no final do tempo regulamentar.</li>
-              <li>São considerados os 90 minutos mais tempo de compensação.</li>
-              <li>Prolongamentos e desempates por penáltis não contam.</li>
+              <li>
+                Conta apenas o resultado no final do tempo regulamentar.
+              </li>
+
+              <li>
+                São considerados os 90 minutos mais tempo de compensação.
+              </li>
+
+              <li>
+                Prolongamentos e desempates por penáltis não contam.
+              </li>
             </ul>
           </Section>
 
@@ -149,7 +170,9 @@ export default function RegulamentoPage() {
             <ol className="list-decimal space-y-2 pl-5">
               <li>Maior número de resultados exatos.</li>
               <li>Maior número de tendências corretas.</li>
-              <li>Caso o empate persista, o prémio será dividido.</li>
+              <li>
+                Caso o empate persista, o prémio será dividido.
+              </li>
             </ol>
           </Section>
 
@@ -157,14 +180,13 @@ export default function RegulamentoPage() {
 
           <Section title="🎁 Prémios">
             <ul className="space-y-3">
-              <li><strong>🥇 1.º Lugar</strong> — Camisola Oficial do Sporting CP</li>
-              <li><strong>🥈 2.º Lugar</strong> — Cachecol Oficial do Sporting CP</li>
-              <li><strong>🥉 3.º Lugar</strong> — Lembrança Oficial do Sporting CP</li>
+              <li>
+                🏆 <strong>Prémios</strong> — Pendentes de decisão.
+              </li>
             </ul>
 
             <p className="mt-4 text-sm text-zinc-400">
-              Os prémios serão entregues após a conclusão da última jornada da
-              Liga Portugal Betclic 2026/27.
+              Os prémios serão anunciados posteriormente.
             </p>
           </Section>
 
@@ -177,8 +199,8 @@ export default function RegulamentoPage() {
             </p>
 
             <p className="mt-3">
-              Qualquer situação não prevista neste regulamento será decidida por
-              consenso entre os participantes.
+              Qualquer situação não prevista neste regulamento será decidida
+              por consenso entre os participantes.
             </p>
           </Section>
 
@@ -187,11 +209,11 @@ export default function RegulamentoPage() {
           <div className="mt-8 rounded-xl border border-zinc-600 bg-zinc-600 p-4 text-center">
 
             <p className="text-xs font-bold text-white">
-              Liga Palpites
+              Champions Palpites
             </p>
 
             <p className="mt-1 text-sm text-zinc-400">
-              Liga Portugal Betclic 2026/27
+              UEFA Champions League 2026/27
             </p>
 
             <p className="mt-3 text-xs text-zinc-500">
@@ -216,7 +238,10 @@ type SectionProps = {
   children: React.ReactNode;
 };
 
-function Section({ title, children }: SectionProps) {
+function Section({
+  title,
+  children,
+}: SectionProps) {
   return (
     <div className="mb-5 rounded-xl border border-zinc-800 bg-zinc-800 p-5">
 

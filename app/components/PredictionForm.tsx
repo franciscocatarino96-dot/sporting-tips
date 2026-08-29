@@ -9,10 +9,12 @@ import { useAuth } from "@/app/providers/AuthProvider";
 
 type PredictionFormProps = {
   gameId: number;
+  competition?: "liga" | "champions";
 };
 
 export default function PredictionForm({
   gameId,
+  competition = "liga",
 }: PredictionFormProps) {
   const { user, loading } = useAuth();
 
@@ -27,9 +29,10 @@ export default function PredictionForm({
       if (loading || !user) return;
 
       const prediction = await getPrediction(
-        user.code,
-        gameId
-      );
+  user.code,
+  gameId,
+  competition
+);
 
       if (!prediction) {
         setHasPrediction(false);
@@ -72,12 +75,13 @@ export default function PredictionForm({
 
     try {
       await savePrediction(
-        user.code,
-        user.name,
-        gameId,
-        home,
-        away
-      );
+  user.code,
+  user.name,
+  gameId,
+  home,
+  away,
+  competition
+);
 
       setHasPrediction(true);
       setSaved(true);

@@ -13,7 +13,9 @@ export default function LoginPage() {
 
   function handleLogin() {
     const user = users.find(
-      (u) => u.code.toUpperCase() === code.trim().toUpperCase()
+      (u) =>
+        u.code.toUpperCase() ===
+        code.trim().toUpperCase()
     );
 
     if (!user) {
@@ -25,7 +27,7 @@ export default function LoginPage() {
 
     alert(`Bem-vindo ${user.name}`);
 
-    router.replace("/");
+    router.replace("/competicoes");
   }
 
   return (
@@ -44,7 +46,9 @@ export default function LoginPage() {
           type="text"
           placeholder="FC01"
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) =>
+            setCode(e.target.value)
+          }
           className="mt-8 w-full rounded-xl bg-zinc-900 p-4 text-center text-xl uppercase text-white outline-none focus:ring-2 focus:ring-green-500"
         />
 
