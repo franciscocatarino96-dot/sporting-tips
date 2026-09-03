@@ -170,6 +170,7 @@ export default async function ChampionsGamePage({
               <PredictionsList
                 gameId={game.id}
                 showPoints
+                competition="champions"
               />
             </>
 
@@ -180,9 +181,9 @@ export default async function ChampionsGamePage({
             ===================================================== */
 
             <PredictionForm
-            gameId={game.id}
-            competition="champions"
-                />
+              gameId={game.id}
+              competition="champions"
+            />
 
           ) : (
 
@@ -205,6 +206,7 @@ export default async function ChampionsGamePage({
 
               <PredictionsList
                 gameId={game.id}
+                competition="champions"
               />
             </>
 

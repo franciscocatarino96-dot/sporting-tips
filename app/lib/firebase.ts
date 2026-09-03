@@ -1,5 +1,9 @@
 import { initializeApp } from "firebase/app";
+
 import { getFirestore } from "firebase/firestore";
+
+import { getAuth } from "firebase/auth";
+
 import {
   getMessaging,
   isSupported,
@@ -19,6 +23,8 @@ const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 
+export const auth = getAuth(app);
+
 export let messaging: Messaging | null = null;
 
 if (typeof window !== "undefined") {
@@ -26,7 +32,10 @@ if (typeof window !== "undefined") {
     .then((supported) => {
       if (supported) {
         messaging = getMessaging(app);
-        console.log("FIREBASE MESSAGING: disponível");
+
+        console.log(
+          "FIREBASE MESSAGING: disponível"
+        );
       } else {
         console.log(
           "FIREBASE MESSAGING: não suportado neste browser"

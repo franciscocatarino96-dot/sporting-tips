@@ -7,7 +7,15 @@ import {
   useState,
 } from "react";
 
-import { getCurrentUser } from "../lib/auth";
+import { onAuthStateChanged } from "firebase/auth";
+
+import {
+  getCurrentUser,
+  loginWithCode,
+  logoutUser,
+} from "../lib/auth";
+
+import { auth } from "../lib/firebase";
 
 type User = {
   code: string;
@@ -18,15 +26,15 @@ type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (user: User) => void;
-  logout: () => void;
+  login: (user: User | string) => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: () => {},
-  logout: () => {},
+  login: async () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({
@@ -38,17 +46,41 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUser(getCurrentUser());
-    setLoading(false);
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (firebaseUser) => {
+        if (firebaseUser) {
+          const storedUser = getCurrentUser();
+
+          if (storedUser) {
+            setUser(storedUser);
+          } else {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, []);
 
-  function login(user: User) {
-    localStorage.setItem("user", JSON.stringify(user));
-    setUser(user);
+  async function login(userOrCode: User | string) {
+    const code =
+      typeof userOrCode === "string"
+        ? userOrCode
+        : userOrCode.code;
+
+    const loggedUser = await loginWithCode(code);
+
+    setUser(loggedUser);
   }
 
-  function logout() {
-    localStorage.removeItem("user");
+  async function logout() {
+    await logoutUser();
     setUser(null);
   }
 
