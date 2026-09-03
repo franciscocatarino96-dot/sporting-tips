@@ -10,7 +10,6 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 
 import {
-  getCurrentUser,
   loginWithCode,
   logoutUser,
 } from "../lib/auth";
@@ -50,12 +49,35 @@ export function AuthProvider({
       auth,
       (firebaseUser) => {
         if (firebaseUser) {
-          const storedUser = getCurrentUser();
+          const code =
+            firebaseUser.uid;
+
+          const storedUser =
+            localStorage.getItem("user");
 
           if (storedUser) {
-            setUser(storedUser);
+            try {
+              const parsedUser =
+                JSON.parse(storedUser);
+
+              setUser(parsedUser);
+            } catch {
+              setUser({
+                code,
+                name:
+                  firebaseUser.displayName ||
+                  code,
+                admin: false,
+              });
+            }
           } else {
-            setUser(null);
+            setUser({
+              code,
+              name:
+                firebaseUser.displayName ||
+                code,
+              admin: false,
+            });
           }
         } else {
           setUser(null);
@@ -68,13 +90,16 @@ export function AuthProvider({
     return () => unsubscribe();
   }, []);
 
-  async function login(userOrCode: User | string) {
+  async function login(
+    userOrCode: User | string
+  ) {
     const code =
       typeof userOrCode === "string"
         ? userOrCode
         : userOrCode.code;
 
-    const loggedUser = await loginWithCode(code);
+    const loggedUser =
+      await loginWithCode(code);
 
     setUser(loggedUser);
   }
