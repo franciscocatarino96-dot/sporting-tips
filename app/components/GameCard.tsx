@@ -10,6 +10,7 @@ import {
   getPrediction,
   getPredictionsByGame,
   arePredictionsClosed,
+  isPredictionManuallyOpened,
 } from "../lib/predictions";
 
 import { getCurrentUser } from "../lib/auth";
@@ -218,6 +219,11 @@ export default function GameCard({
   ] = useState(false);
 
   const [
+    manuallyOpened,
+    setManuallyOpened,
+  ] = useState(false);
+
+  const [
     predictionCount,
     setPredictionCount,
   ] = useState(0);
@@ -319,8 +325,18 @@ export default function GameCard({
             competition
           );
 
+        const manuallyOpened =
+          await isPredictionManuallyOpened(
+            id,
+            competition
+          );
+
         setPredictionsClosed(
           closed
+        );
+
+        setManuallyOpened(
+          manuallyOpened
         );
 
       } catch (error) {
@@ -344,9 +360,12 @@ export default function GameCard({
   // =====================================================
 
   const predictionOpen =
-    isPredictionOpen(
-      gameDate,
-      gameTime
+    (
+      isPredictionOpen(
+        gameDate,
+        gameTime
+      ) ||
+      manuallyOpened
     ) &&
     !predictionsClosed;
 

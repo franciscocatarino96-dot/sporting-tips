@@ -85,7 +85,38 @@ export async function arePredictionsClosed(
     )
   );
 
-  return snapshot.exists();
+  if (!snapshot.exists()) return false;
+
+  const data = snapshot.data();
+
+  return data.closed === true;
+}
+
+
+// =====================================================
+// VERIFICAR SE O ADMIN ABRIU MANUALMENTE
+// =====================================================
+
+export async function isPredictionManuallyOpened(
+  gameId: number,
+  competition: Competition = "liga"
+): Promise<boolean> {
+  const closedId =
+    competition === "liga"
+      ? `${gameId}`
+      : `champions_${gameId}`;
+
+  const snapshot = await getDoc(
+    doc(
+      db,
+      "closedPredictions",
+      closedId
+    )
+  );
+
+  if (!snapshot.exists()) return false;
+
+  return snapshot.data().manualOverride === true;
 }
 
 
@@ -113,6 +144,7 @@ export async function closePredictions(
       gameId,
       competition,
       closed: true,
+      manualOverride: false,
       closedAt:
         new Date().toISOString(),
     }
@@ -134,12 +166,21 @@ export async function openPredictions(
       ? `${gameId}`
       : `champions_${gameId}`;
 
-  await deleteDoc(
+  await setDoc(
     doc(
       db,
       "closedPredictions",
       closedId
-    )
+    ),
+    {
+      gameId,
+      competition,
+      closed: false,
+      manualOverride: true,
+      openedAt:
+        new Date().toISOString(),
+    },
+    { merge: true }
   );
 }
 
