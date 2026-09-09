@@ -229,7 +229,14 @@ export async function savePrediction(
   // VERIFICAR HORÁRIO
   // ---------------------------------------------------
 
+  const manuallyOpened =
+    await isPredictionManuallyOpened(
+      gameId,
+      competition
+    );
+
   if (
+    !manuallyOpened &&
     !isPredictionOpen(
       game.date,
       game.time
